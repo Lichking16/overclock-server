@@ -173,7 +173,16 @@
 .gld{color:#bcc8e6;line-height:1.32}
 
 /* deck browser */
-.deckmain{display:flex;gap:18px;align-items:flex-start;width:92vw;max-width:880px;text-align:left}
+.deckmain{display:flex;gap:16px;align-items:flex-start;width:94vw;max-width:1040px;text-align:left}
+.deckabil{width:212px;flex:none;text-align:left;max-height:64vh;overflow:auto}
+.abtitle{font-size:11px;font-weight:800;letter-spacing:2px;margin-bottom:2px}
+.abrel{font-size:9px;color:var(--muted);margin-bottom:9px;line-height:1.35;text-transform:uppercase;letter-spacing:.5px}
+.abrow{margin-bottom:9px;border-left:2px solid var(--line);padding-left:7px}
+.abhd{display:flex;align-items:baseline;gap:5px}
+.abtag{font-size:8px;letter-spacing:.5px;color:var(--muted);font-weight:700;white-space:nowrap}
+.abnm{font-size:11px;font-weight:800;color:#dbe6ff}
+.abcost{font-size:9px;color:var(--gold);font-weight:700;margin-left:auto}
+.abtx{font-size:9px;color:#9fb0d6;line-height:1.32;margin-top:2px}
 .deckwrap{flex:1;min-width:0;text-align:left;column-count:2;column-gap:24px;max-height:64vh;overflow:auto}
 .dsec{break-inside:avoid;margin-bottom:12px}
 .dsech{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:5px}
@@ -1464,6 +1473,16 @@ function showKeywords(){
   ovl().classList.add("show");
 }
 function closeGlossary(){if(S&&!S.over)ovl().classList.remove("show");else showMenu();}
+function facAbilities(fac){
+  var P=(typeof POWERS!=="undefined"?POWERS[fac]:null)||{},B=(typeof BANKPOWER!=="undefined"?BANKPOWER[fac]:null),F=FACTIONS[fac],col=F.col;
+  function row(tag,pw,cost){if(!pw)return "";return '<div class="abrow"><div class="abhd"><span class="abtag">'+tag+'</span><span class="abnm">'+esc(pw.name)+'</span><span class="abcost">'+cost+'</span></div><div class="abtx">'+esc(pw.txt)+'</div></div>';}
+  return '<div class="abtitle" style="color:var('+col+')">POWERS</div>'+
+    '<div class="abrel">'+esc(F.rel)+' \u00b7 '+esc(F.kw)+'</div>'+
+    row("CORE",P.core,(P.core?P.core.cost+"\u26a1":""))+
+    row("DRAW",P.draw,(P.draw?P.draw.cost+"\u26a1":""))+
+    row("\u2b22 GEN",B,(B?B.cost+"\u26a1":""))+
+    row("\u2605 ULT",P.ult,"charge");
+}
 function deckCardHTML(id){
   var d=DB[id];if(!d)return "";
   var stat=d.type==="program"?(d.atk+"/"+d.hp):(d.type==="permanent"?("0/"+d.hp):"");
@@ -1498,7 +1517,7 @@ function showDecks(fac){
   ovl().innerHTML='<h1 style="color:var('+FACTIONS[fac].col+')">'+FACTIONS[fac].name+'</h1>'+
     '<div class="sub">'+FACTIONS[fac].rel+' \u00b7 '+total+' cards \u00b7 hover a card to preview</div>'+
     '<div class="decktabs">'+tabs+'</div>'+
-    '<div class="deckmain"><div class="deckwrap">'+sect+'</div><div class="deckprev" id="deckPrev">'+(items[0]?deckCardHTML(items[0].id):"")+'</div></div>'+
+    '<div class="deckmain"><div class="deckabil">'+facAbilities(fac)+'</div><div class="deckwrap">'+sect+'</div><div class="deckprev" id="deckPrev">'+(items[0]?deckCardHTML(items[0].id):"")+'</div></div>'+
     '<button onclick="showKeywords()" style="margin-top:8px;opacity:.7">\u25c2 FIELD GUIDE</button>';
   ovl().classList.add("show");
 }
