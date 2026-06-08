@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OVERCLOCK</title>
+<style>
+:root{
+    --bg:#05070d;--panel:#0c111c;--line:#1c2740;--ink:#dbe6ff;--muted:#6f80a8;
+    --cyan:#27e1ff;--mag:#ff3ec8;--gold:#ffd24a;--green:#39e6a0;--red:#ff5468;--grid:#0e1626;
+    --f-syn:#ffd24a;--f-swm:#39e6a0;--f-melt:#ff7a3c;--f-bas:#27e1ff;--f-zd:#c45cff;--f-sng:#46ffe0;--f-ren:#ff5d7a;--f-mech:#b8c4d6;--f-carn:#ff5cc8;--f-dem:#e23b5a;--f-cult:#9b51e0;--f-prph:#e0a86b;
+  }
+  *{box-sizing:border-box;-webkit-user-select:none;user-select:none}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(900px 500px at 50% -10%,rgba(39,225,255,.10),transparent 60%),var(--bg);
+    color:var(--ink);font:14px/1.4 ui-monospace,"SF Mono",Menlo,Consolas,monospace;overflow:hidden}
+  .field{position:relative;height:100vh;display:flex;flex-direction:column;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:34px 34px;background-position:center}
+  .row{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 12px;min-height:0}
+  .center{flex:0 0 70px;display:flex;align-items:center;justify-content:center;gap:16px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,rgba(39,225,255,.04),rgba(255,62,200,.04))}
+  .board{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:116px}
+  .hand{display:flex;gap:7px;justify-content:center;align-items:flex-end;flex-wrap:wrap}
+  .sidebar{position:absolute;display:flex;flex-direction:column;gap:6px;width:150px}
+  #enemyBar{top:10px;left:10px}#playerBar{bottom:10px;left:10px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+  .stat .lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .stat .val{font-size:20px;font-weight:700}
+  .core .val{color:var(--red)} .cap .val{color:var(--gold)}
+  .fname{font-size:10px;font-weight:700;letter-spacing:1px}
+  .pool{display:flex;flex-direction:column;align-items:center;justify-content:center;width:140px;height:56px;
+    border:1px solid var(--cyan);border-radius:12px;box-shadow:0 0 24px rgba(39,225,255,.22) inset,0 0 16px rgba(39,225,255,.16);
+    background:rgba(39,225,255,.05)}
+  .pool .big{font-size:26px;font-weight:800;color:var(--cyan);line-height:1}
+  .pool .lbl{font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+  .turnbox{display:flex;flex-direction:column;align-items:center;gap:6px}
+  #endBtn{background:linear-gradient(180deg,#13243d,#0c1626);color:var(--cyan);border:1px solid var(--cyan);
+    border-radius:9px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:11px}
+  #endBtn:hover{box-shadow:0 0 16px rgba(39,225,255,.4)} #endBtn:disabled{opacity:.4;cursor:default;box-shadow:none}
+  #turnTag{font-size:10px;color:var(--muted);letter-spacing:1px}
+  .card{width:92px;height:124px;border-radius:10px;position:relative;cursor:pointer;
+    background:linear-gradient(180deg,#101a2e,#0a1120);border:1px solid var(--line);
+    padding:6px;display:flex;flex-direction:column;transition:transform .14s,box-shadow .18s;overflow:hidden}
+  .card .name{font-size:10px;font-weight:700;line-height:1.1;color:#eaf2ff;margin-bottom:1px}
+  .card .type{font-size:7.5px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  .card .txt{font-size:8px;color:#aebbdb;margin-top:3px;flex:1;line-height:1.22}
+  .card .cost{position:absolute;top:-7px;right:-7px;width:23px;height:23px;border-radius:50%;
+    background:var(--cyan);color:#022;font-weight:800;display:grid;place-items:center;font-size:12px;box-shadow:0 0 10px rgba(39,225,255,.6)}
+  .card.script .cost{background:var(--mag);box-shadow:0 0 10px rgba(255,62,200,.6)}
+  .card .stats{position:absolute;bottom:4px;left:6px;right:6px;display:flex;justify-content:space-between;font-weight:800;font-size:13px}
+  .card .atk{color:var(--gold)} .card .hp{color:var(--green)}
+  .card .kw{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:7px;letter-spacing:1px;color:#8fa6d6}
+  .card .arm{position:absolute;top:4px;left:5px;font-size:9px;color:#cdd9ff;font-weight:700}
+  .fl{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:10px 0 0 10px}
+  .cardart{display:block}
+  .hart{height:30px;display:grid;place-items:center;margin:3px 0 1px}
+  .hart .cardart{width:46px;height:28px}
+  .uart{flex:1;display:grid;place-items:center;min-height:0;margin-top:1px}
+  .uart .cardart{width:50px;height:30px}
+  .ukw{font-size:6.5px;letter-spacing:.4px;color:#8fa6d6;text-align:center;line-height:1.05;min-height:7px}
+  .ufoot{display:flex;justify-content:space-between;font-weight:800;font-size:13px;padding:1px 3px 0}
+  .ufoot .atk{color:var(--gold)} .ufoot .hp{color:var(--green)}
+  .card.hand-card:hover{transform:translateY(-10px);box-shadow:0 8px 26px rgba(0,0,0,.6)}
+  .card.playable{box-shadow:0 0 0 1px var(--cyan),0 0 14px rgba(39,225,255,.22)}
+  .card.unit{width:84px;height:104px}
+  .card.ready{box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(255,210,74,.3)}
+  .card.selected{transform:translateY(-8px);box-shadow:0 0 0 2px var(--mag),0 0 18px rgba(255,62,200,.6)}
+  .card.target{box-shadow:0 0 0 2px var(--red),0 0 14px rgba(255,84,104,.6);cursor:crosshair}
+  .card.stealth{opacity:.62;border-style:dashed}
+  .card.sick .stats .atk{opacity:.4}
+  .enemyhand .card{width:50px;height:72px;background:repeating-linear-gradient(45deg,#0c1322,#0c1322 6px,#0e1a30 6px,#0e1a30 12px);border-color:#1c2740}
+  .enemyhand .card *{display:none}
+  .core.target{box-shadow:0 0 0 2px var(--red),0 0 16px rgba(255,84,104,.7);cursor:crosshair}
+  #log{position:absolute;right:10px;top:10px;width:210px;height:140px;overflow:auto;background:rgba(6,10,18,.85);
+    border:1px solid var(--line);border-radius:10px;padding:8px;font-size:10px;color:#9fb0d6}
+  #recent{position:absolute;right:10px;top:160px;width:214px;height:92px;overflow:hidden;background:rgba(6,10,18,.85);border:1px solid var(--line);border-radius:10px;padding:8px;z-index:15}
+  #recent .rclbl{font-size:8.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px}
+  #recent .rcempty{font-size:11px;color:var(--muted)}
+  #recent .rcact{font-size:11px;color:#cdd9ff;line-height:1.3}
+  #recent .rcard{display:flex;gap:8px;align-items:center;border-left:3px solid var(--line);padding-left:7px}
+  #recent .rca{flex:none;width:44px;height:30px;display:grid;place-items:center}
+  #recent .rca svg{width:44px;height:30px}
+  #recent .rcname{font-size:12px;font-weight:800;line-height:1.1}
+  #recent .rctxt{font-size:9.5px;color:#9fb0d6;line-height:1.25;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  #log .l{margin:2px 0;border-bottom:1px solid rgba(255,255,255,.03);padding-bottom:2px}
+  #log .me{color:var(--cyan)}#log .ai{color:var(--mag)}#log .sys{color:var(--muted)}
+  .toast{position:absolute;left:50%;top:40%;transform:translateX(-50%);background:rgba(8,12,22,.92);
+    border:1px solid var(--cyan);border-radius:10px;padding:9px 16px;color:var(--cyan);font-weight:700;
+    letter-spacing:1px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+  .toast.show{opacity:1}
+  .overlay{position:absolute;inset:0;background:rgba(3,5,10,.94);display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;z-index:20;padding:20px;overflow:auto}
+  .overlay.show{display:flex}
+  .overlay h1{font-size:34px;margin:0;letter-spacing:5px;color:var(--cyan)}
+  .overlay .sub{color:var(--muted);font-size:13px;margin:-6px 0 4px}
+  .facwrap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:780px}
+  .fac{width:240px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:var(--panel);transition:.12s}
+  .fac:hover{transform:translateY(-3px)}
+  .fac h3{margin:0 0 2px;font-size:15px;letter-spacing:1px}
+  .fac .pool-rel{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+  .fac p{margin:0;font-size:10.5px;color:#aebbdb;line-height:1.35}
+  .fac .kw{margin-top:6px;font-size:9px;color:#cdd9ff}
+  .overlay button{background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:10px 22px;border-radius:10px;
+    font:inherit;font-size:14px;cursor:pointer;letter-spacing:2px}
+  .overlay button:hover{box-shadow:0 0 18px rgba(39,225,255,.4)}
+  #help{position:absolute;left:10px;top:180px;width:150px;font-size:9.5px;color:var(--muted);
+    background:rgba(6,10,18,.8);border:1px solid var(--line);border-radius:10px;padding:8px}
+  #help b{color:var(--cyan)}
+  .deckcount{font-size:9px;color:var(--muted);text-align:center}
+  .title{position:absolute;left:50%;top:5px;transform:translateX(-50%);font-size:10px;letter-spacing:6px;color:var(--cyan);opacity:.45}
+  .powerbtn{background:linear-gradient(180deg,#241a3a,#160f26);color:var(--mag);border:1px solid var(--mag);border-radius:9px;padding:7px 8px;font:inherit;font-weight:700;font-size:10px;letter-spacing:.5px;cursor:pointer;text-transform:uppercase}
+  .powerbtn:hover:not(:disabled){box-shadow:0 0 14px rgba(255,62,200,.4)}
+  .powerbtn:disabled{opacity:.38;cursor:default}
+  .powerbtn.arming{box-shadow:0 0 0 2px var(--mag),0 0 16px rgba(255,62,200,.6)}
+  .opwr{font-size:9px;color:#9b7fb0;letter-spacing:.5px}
+  #powerPanel{display:flex;flex-direction:column;gap:4px}
+  .powerbtn.ult{color:var(--gold);border-color:var(--gold)}
+  .powerbtn.ult.charged:not(:disabled){box-shadow:0 0 12px rgba(255,210,74,.55);animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 22px rgba(255,210,74,.9)}}
+  .card.perm{border-style:dashed;border-color:#8a7a3a}
+  .card.unit.actv{box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(255,210,74,.45);cursor:pointer}
+  .capbadge{position:absolute;top:-7px;right:18px;background:var(--gold);color:#1a1206;font-weight:800;font-size:10px;border-radius:8px;padding:1px 5px;box-shadow:0 0 8px rgba(255,210,74,.5)}
+  .statwrap{width:440px;max-width:92vw;text-align:left}
+  .bigrec{font-size:40px;font-weight:800;color:var(--ink);letter-spacing:1px}
+  .bigrec .sub{font-size:26px;margin:0 8px}
+  .ratebig{font-size:22px;color:var(--cyan);margin-left:14px}
+  .stbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+  .stbl th{color:var(--muted);font-weight:600;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:4px 6px;border-bottom:1px solid var(--line)}
+  .stbl td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.04);font-weight:700}
+  .bar{height:7px;background:#0b0e16;border-radius:4px;overflow:hidden;width:120px}
+  .barfill{height:100%;border-radius:4px}
+  .recents{display:flex;flex-direction:column;gap:3px;max-height:150px;overflow:auto}
+  .recent{font-size:11px;font-weight:700;padding:3px 6px;background:rgba(255,255,255,.02);border-radius:6px}
+  .lobbyin{font:inherit;font-size:16px;background:#0a0e16;color:var(--cyan);border:1px solid var(--cyan);border-radius:10px;padding:10px 14px;outline:none}
+
+/* v0.5 UI — bigger cards, chips, inspector, indicators, glossary */
+.row{flex-wrap:nowrap;overflow-x:auto;overflow-y:visible}
+.board{flex-wrap:nowrap;overflow-x:auto;min-height:0}
+.hand{flex-wrap:nowrap;overflow-x:auto}
+.card{width:122px;height:174px}
+.card .name{font-size:11px;line-height:1.12}
+.card .type{font-size:8px}
+.card .txt{font-size:9px;line-height:1.28;margin-top:3px}
+.card .cost{width:26px;height:26px;font-size:13px}
+.hart{height:34px;margin:3px 0 2px}.hart .cardart{width:54px;height:32px}
+.card.unit{width:112px;height:156px;padding:6px 6px 4px}
+.card.unit .name{font-size:10px;text-align:center;line-height:1.1}
+.uart{margin-top:0;flex:none;height:30px}.uart .cardart{width:46px;height:28px}
+.chips{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:2px 0;min-height:0}
+.chip{font-size:7px;font-weight:800;letter-spacing:.3px;padding:1px 4px;border-radius:5px;background:rgba(120,160,220,.16);color:#d4e2ff;text-transform:uppercase}
+.pstat{font-size:8px;font-weight:800;letter-spacing:.5px;color:#cbb86a}
+.ctxt{font-size:7.6px;line-height:1.22;color:#aebbdb;flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;padding:0 3px;text-align:center}
+.ufoot{font-size:15px;padding:2px 5px 0}
+.enemyhand .card{width:46px;height:64px}
+.resline{font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.turnmeta{font-size:9px;color:var(--muted);letter-spacing:.4px;margin-top:3px;text-align:center}
+.inspect{position:absolute;right:10px;top:262px;width:214px;background:rgba(8,12,20,.95);border:1px solid var(--cyan);border-radius:10px;padding:11px;display:none;z-index:16;box-shadow:0 0 22px rgba(0,0,0,.55)}
+.inspect.show{display:block}
+.inspect .iname{font-size:15px;font-weight:800}
+.inspect .imeta{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:2px 0 6px}
+.inspect .itxt{font-size:11px;color:#cdd9ff;line-height:1.32}
+.inspect .ikws{margin-top:8px;border-top:1px solid var(--line);padding-top:6px;display:flex;flex-direction:column;gap:4px}
+.inspect .ikw{font-size:9.5px;color:#9fb0d6;line-height:1.28}
+.kwbtn{background:transparent;border:1px solid var(--muted);color:var(--cyan);border-radius:7px;padding:5px 9px;font:inherit;font-size:10px;cursor:pointer;letter-spacing:1px}
+.kwbtn:hover{border-color:var(--cyan);box-shadow:0 0 10px rgba(39,225,255,.25)}
+.glwrap{display:flex;gap:24px;max-width:780px;text-align:left;flex-wrap:wrap;justify-content:center}
+.glcol{flex:1;min-width:300px}
+.glh{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.gl{display:flex;gap:10px;margin:6px 0;font-size:12px}
+.gln{flex:none;width:120px;font-weight:800}
+.gld{color:#bcc8e6;line-height:1.32}
+
+/* deck browser */
+.deckmain{display:flex;gap:18px;align-items:flex-start;width:92vw;max-width:880px;text-align:left}
+.deckwrap{flex:1;min-width:0;text-align:left;column-count:2;column-gap:24px;max-height:64vh;overflow:auto}
+.dsec{break-inside:avoid;margin-bottom:12px}
+.dsech{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:5px}
+.drow{display:flex;align-items:center;gap:7px;font-size:12px;padding:3px 5px;border-radius:6px;cursor:pointer}
+.drow:hover{background:rgba(120,180,255,.10)}
+.deckprev{width:236px;flex:none;position:sticky;top:0}
+.pvcard{border:1.5px solid var(--line);border-radius:14px;padding:12px 12px 14px;background:rgba(6,12,22,.7);text-align:center;box-shadow:0 6px 22px rgba(0,0,0,.4)}
+.pvtop{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.pvcost{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#10202f;color:var(--cyan);font-size:11px;font-weight:800;flex:none}
+.pvname{font-weight:800;font-size:13px;flex:1;text-align:left}
+.pvstat{color:var(--gold);font-weight:800;font-size:13px}
+.pvart{display:grid;place-items:center;margin:8px 0;height:78px}
+.pvart svg{width:96px;height:64px}
+.pvtype{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+.pvkw{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:6px 0 2px}
+.pvchip{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:8px;background:rgba(120,180,255,.14);color:#cfe0ff}
+.pvtxt{font-size:11px;line-height:1.45;color:#c4d2e6;margin-top:7px}
+.drow.legacy-hidden{display:flex;align-items:center;gap:7px;font-size:12px;padding:2px 0}
+.dn{color:var(--muted);width:26px;text-align:right;font-weight:700}
+.dcost{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#10202f;color:var(--cyan);font-size:10px;font-weight:800;flex:none}
+.dname{flex:1;font-weight:700;color:#dbe6ff}
+.dstat{color:var(--gold);font-size:11px;font-weight:700}
+.dcap{color:var(--gold);font-size:10px;font-weight:700}
+.decknav{display:flex;gap:10px;margin:-2px 0 6px}
+.decknav button{font-size:11px;padding:7px 12px}
+.decktabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:660px;margin:2px auto 10px}
+.dtab{font-size:10px;letter-spacing:.5px;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer}
+.dtab:hover{color:#fff;border-color:var(--tc,var(--line))}
+.dtab.on{color:var(--tc);border-color:var(--tc);background:rgba(255,255,255,.07);font-weight:700}
+
+.card.stun{filter:grayscale(.5);opacity:.85}
+.stunchip{background:#5a2030;color:#ffc0c8}
+
+/* card animations */
+@keyframes aEnter{from{transform:translateY(12px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+.card.unit.aEnter{animation:aEnter .42s cubic-bezier(.2,.8,.3,1.2)}
+@keyframes aHitk{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+.card.unit.aHit{animation:aHitk .32s ease}
+@keyframes aBuffk{0%{box-shadow:0 0 0 2px var(--green),0 0 16px rgba(57,230,160,.55)}100%{box-shadow:none}}
+.card.unit.aBuff{animation:aBuffk .55s ease}
+@keyframes aDrawk{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.card.hand-card.aDraw{animation:aDrawk .3s ease}
+@keyframes aShakek{0%,100%{transform:translateX(0)}30%{transform:translateX(-3px)}60%{transform:translateX(3px)}}
+.stat.aShake{animation:aShakek .3s ease}
+@keyframes aPulse{0%{transform:scale(1)}45%{transform:scale(1.45);text-shadow:0 0 12px var(--cyan)}100%{transform:scale(1)}}
+.aPulse{animation:aPulse .32s ease}
+/* floating numbers */
+.floatnum{position:absolute;transform:translate(-50%,-50%);font-weight:800;font-size:18px;pointer-events:none;z-index:25;text-shadow:0 1px 3px #000;animation:floatk .78s ease-out forwards}
+.floatnum.dmg{color:var(--red)} .floatnum.heal{color:var(--green)}
+@keyframes floatk{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}20%{opacity:1;transform:translate(-50%,-95%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-185%) scale(1)}}
+/* banner */
+#turnBanner{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:34px;font-weight:800;letter-spacing:4px;text-transform:uppercase;pointer-events:none;opacity:0;z-index:28;text-shadow:0 0 24px currentColor}
+#turnBanner.show{animation:bannerk 1.1s ease-out}
+@keyframes bannerk{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}25%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}}
+/* screen flash */
+.screenflash{position:absolute;inset:0;pointer-events:none;z-index:22;animation:flashk .43s ease-out}
+@keyframes flashk{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+/* attack beam / burst / slash */
+.fxbolt{position:absolute;width:30px;height:5px;border-radius:3px;pointer-events:none;z-index:24}
+.fxburst{position:absolute;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:25;border:2px solid currentColor;box-shadow:0 0 16px currentColor;animation:burstk .36s ease-out forwards}
+@keyframes burstk{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+.fxslash{position:absolute;width:54px;height:54px;transform:translate(-50%,-50%);pointer-events:none;z-index:25;border-top:4px solid currentColor;border-radius:50%;box-shadow:0 0 14px currentColor;animation:slashk .34s ease-out forwards}
+@keyframes slashk{0%{transform:translate(-50%,-50%) rotate(-90deg) scale(.4);opacity:0}40%{opacity:1}100%{transform:translate(-50%,-50%) rotate(25deg) scale(1.2);opacity:0}}
+/* spell effects */
+.fxboltdown{position:absolute;width:6px;height:64px;border-radius:3px;background:currentColor;box-shadow:0 0 16px currentColor;transform:translate(-50%,-50%);pointer-events:none;z-index:24;animation:boltdownk .32s ease-out forwards}
+@keyframes boltdownk{0%{transform:translate(-50%,-150%) scaleY(.3);opacity:0}35%{opacity:1}100%{transform:translate(-50%,-50%) scaleY(1);opacity:0}}
+.fxring{position:absolute;width:78px;height:78px;border-radius:50%;border:2px solid currentColor;box-shadow:0 0 14px currentColor;transform:translate(-50%,-50%);pointer-events:none;z-index:23;animation:ringk .46s ease-out forwards}
+@keyframes ringk{0%{transform:translate(-50%,-50%) scale(.3);opacity:.85}100%{transform:translate(-50%,-50%) scale(1.7);opacity:0}}
+.fxglowel{animation:glowelk .52s ease-out}
+@keyframes glowelk{0%{box-shadow:0 0 0 2px currentColor,0 0 20px currentColor}100%{box-shadow:none}}
+.fxcorepulse{animation:corepulsek .52s ease}
+@keyframes corepulsek{0%,100%{box-shadow:none}45%{box-shadow:0 0 0 2px currentColor,0 0 24px currentColor}}
+
+</style>
+</head>
+<body>
+<div class="field" id="field">
+  <div class="title">O V E R C L O C K</div>
+  <div id="enemyBar" class="sidebar">
+    <div class="fname" id="enemyFac">ENEMY</div>
+    <div id="enemyPower" class="opwr"></div>
+    <div id="enemyRes" class="resline"></div>
+    <div class="stat core" id="enemyCore"><div class="lbl">Enemy Core</div><div class="val">25</div></div>
+    <div class="stat cap"><div class="lbl">Enemy Capacitor</div><div class="val" id="enemyCap">0</div></div>
+    <div class="deckcount">Deck <span id="enemyDeck">0</span> · Hand <span id="enemyHandN">0</span></div>
+  </div>
+  <div class="row enemyhand" id="enemyHand"></div>
+  <div class="row board" id="enemyBoard"></div>
+  <div class="center">
+    <div class="turnbox"><div id="turnTag">— your turn —</div><div id="turnMeta" class="turnmeta"></div></div>
+    <div class="pool"><div class="big" id="poolVal">0</div><div class="lbl">Shared Pool ⚡</div></div>
+    <div class="turnbox"><button id="endBtn">End Turn ▸</button></div>
+  </div>
+  <div class="row board" id="playerBoard"></div>
+  <div class="row hand" id="playerHand"></div>
+  <div id="playerBar" class="sidebar">
+    <div id="powerPanel">
+      <button id="pwCore" class="powerbtn"></button>
+      <button id="pwDraw" class="powerbtn"></button>
+      <button id="pwBank" class="powerbtn"></button>
+      <button id="pwUlt" class="powerbtn ult"></button>
+    </div>
+    <button id="mullBtn" class="sidebtn" onclick="mulligan()" style="display:none">↻ Mulligan</button>
+    <button id="concedeBtn" class="sidebtn cc" onclick="concede()" style="display:none">Concede</button>
+    <div class="deckcount">Deck <span id="playerDeck">0</span></div>
+    <div class="stat cap"><div class="lbl">Your Capacitor</div><div class="val" id="playerCap">0</div></div>
+    <div class="stat core" id="playerCore"><div class="lbl">Your Core</div><div class="val">25</div></div>
+    <div id="playerRes" class="resline"></div>
+    <div class="fname" id="playerFac">YOU</div>
+  </div>
+  <div id="log"></div>
+  <div id="recent"></div>
+  <div id="help"><b>HOW TO PLAY</b><br>Spend the <b>shared pool</b> — leftover ⚡ carries to your opponent.<br><br>Click a hand card to play it. Click a <b>gold (ready)</b> unit, then an enemy unit or Core to attack.<br><br>Drop the enemy Core to 0.<br><br><button class="kwbtn" onclick="showKeywords()">⌗ FIELD GUIDE</button></div>
+  <div id="inspect" class="inspect"></div>
+  <div class="toast" id="toast"></div>
+  <div class="overlay show" id="overlay"></div>
+</div>
+<script>
+/* OVERCLOCK — data.js  (auto-split; loaded as a plain <script>, shares global scope) */
+
+/* ===================== FACTIONS ===================== */
+const FACTIONS={
+  syn:{name:"SYNDICATE",col:"--f-syn",rel:"Privatizes the pool",kw:"Leech — bank ⚡ when you attack",
+    blurb:"Thieves and loan sharks. Bank Watts into your private Capacitor, steal the enemy's, and grow units that scale with your hoard."},
+  swm:{name:"SWARM",col:"--f-swm",rel:"Drains the pool cheaply",kw:"Replicate — deploys also make Drones",
+    blurb:"A distributed botnet. Flood the board with cheap units and tokens, then buff the whole swarm and overrun."},
+  melt:{name:"MELTDOWN",col:"--f-melt",rel:"Burns the pool",kw:"Overheat — big stats that decay 1 HP/turn",
+    blurb:"Overclockers pushing hardware past the limit. Oversized aggressive units and direct burn to the Core. Race them down."},
+  bas:{name:"BASTION",col:"--f-bas",rel:"Taxes the pool",kw:"Fortify / Guard / Tax",
+    blurb:"Sysadmins and ICE. Walls with armor, Core-healing engines, and Tariffs that make the enemy's cards cost more."},
+  zd:{name:"ZERO-DAY",col:"--f-zd",rel:"Strikes from the shadows",kw:"Stealth — untargetable, hits anyone",
+    blurb:"Ghost hackers. Untargetable stealth units, exploits that hit the Core directly, and hand disruption."},
+  sng:{name:"SINGULARITY",col:"--f-sng",rel:"Feeds the pool",kw:"Compile — scale with scripts played",
+    blurb:"An emergent AI. Ramp Watts into the shared pool and snowball cards that get bigger and cheaper as you compile."},
+  ren:{name:"RENEGADES",col:"--f-ren",rel:"Feeds on death",kw:"Martyr — effects trigger when units die",
+    blurb:"Outlaws and the undead. Every death is fuel — damage, cards, and banked Watts. Sacrifice your own, then drag them back from the grave."},
+  mech:{name:"MECHS",col:"--f-mech",rel:"Hoards for a colossus",kw:"Scrap — build parts toward a giant Mech",
+    blurb:"Engineers assembling a war machine. Stockpile Scrap and banked Watts, scaling cheap chassis into an unstoppable Titan that gets cheaper as you build."},
+  carn:{name:"CARNEVAL",col:"--f-carn",rel:"Inverts power & toughness",kw:"Invert — swap a unit's ATK and HP",
+    blurb:"A glitching funhouse of mirrors. Flip ATK and HP to turn walls into killers and glass cannons into survivors — then swap the whole board with your enemy."},
+  dem:{name:"DEMONS",col:"--f-dem",rel:"Feeds the abyss",kw:"Ascend — small units transform into 4/4 Demons",
+    blurb:"A swarm of imps and acolytes that ascend into 4/4 Demons through attacking and sacrifice. Brand them with Guard, Armor and Overheat, then permanently empower the whole legion with Ascendancy."},
+  cult:{name:"CULTISTS",col:"--f-cult",rel:"Sacrifices to the pool",kw:"Ritual — stack to 3 to summon a growing Horror",
+    blurb:"Doomsayers who stack Ritual and feed it with sacrifices. Every third Ritual summons a Horror — and each Horror grows +1/+1 — from 2/2 up toward a colossal 10/10. Doomsday wipes the board to fuel them all."},
+  prph:{name:"PROPHETS",col:"--f-prph",rel:"Reads the pool's fate",kw:"Arcana — draw Minor & Major spell cards",
+    blurb:"Fortune-tellers who pull Minor and Major Arcana into hand as free spells. Read Minors every turn, set Omens to steer toward a Major, and let Revelation rain down the most powerful cards in the deck."},
+};
+
+/* ===================== CARD DB =====================
+ program: {f,type:'program',cost,atk,hp, + flags/triggers}
+ script:  {f,type:'script',cost,fx,val,target, ...}
+ flags: guard,leech,overheat,stealth,backdoor,armor
+ triggers: deploy, start, death
+ target: 'none'|'enemyUnit'|'friendly'|'any'
+*/
+const DB={
+  /* neutral */
+  n_runt:{f:"n",type:"program",cost:1,atk:1,hp:1,txt:"Subprocess."},
+  n_grunt:{f:"n",type:"program",cost:2,atk:2,hp:2,txt:"Process Node."},
+  n_bruiser:{f:"n",type:"program",cost:4,atk:4,hp:4,txt:"Heavy Daemon."},
+  n_spike:{f:"n",type:"script",cost:2,fx:"dmgAny",val:3,target:"any",txt:"Data Spike: 3 dmg to any unit or Core."},
+  n_surge:{f:"n",type:"script",cost:2,capCost:2,fx:"dmgAny",val:5,target:"any",txt:"Surge Cannon. OVERLOAD ⚡2: deal 5 to any unit or Core."},
+  n_tesla:{f:"n",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"coreDmg3",cd:1,uses:3,capCost:2},txt:"Tesla Coil. LOCATION · OVERLOAD ⚡2: 3 to enemy Core. 3 uses."},
+
+  /* SYNDICATE */
+  syn_broker:{f:"syn",type:"program",cost:2,atk:2,hp:2,leech:true,txt:"Data Broker. LEECH."},
+  syn_shark:{f:"syn",type:"program",cost:3,atk:3,hp:3,leech:true,deploy:"bank2",txt:"Loan Shark. LEECH. Deploy: bank 2⚡."},
+  syn_enf:{f:"syn",type:"program",cost:4,atk:4,hp:4,leech:true,txt:"Enforcer. LEECH."},
+  syn_golem:{f:"syn",type:"program",cost:5,atk:4,hp:6,deploy:"scaleCap",txt:"Vault Golem. Deploy: +1 ATK per 2⚡ banked."},
+  syn_market:{f:"syn",type:"script",cost:1,fx:"bank",val:4,target:"none",txt:"Black Market: bank up to 4⚡."},
+  syn_extort:{f:"syn",type:"script",cost:2,fx:"extort",target:"none",txt:"Extortion: steal 2⚡ from enemy; if none, 2 to their Core."},
+  syn_insider:{f:"syn",type:"script",cost:2,fx:"drawPerCap",target:"none",txt:"Insider Trading: draw 1 per 3⚡ banked."},
+  syn_vault:{f:"syn",type:"program",cost:3,atk:1,hp:5,guard:true,bankOnHit:true,txt:"Vault Guard. GUARD. When attacked, bank 1⚡."},
+  syn_wiretap:{f:"syn",type:"permanent",cost:3,atk:0,hp:4,bankEnemyPlay:true,txt:"Wiretap. Whenever an opponent plays a card, bank 1⚡."},
+
+  /* SWARM */
+  swm_drone:{f:"swm",type:"program",cost:1,atk:1,hp:1,txt:"Drone token."},
+  swm_node:{f:"swm",type:"program",cost:2,atk:1,hp:3,start:"spawnDrone",txt:"Spawn Node. Start: make a 1/1 Drone."},
+  swm_master:{f:"swm",type:"program",cost:3,atk:2,hp:2,deploy:"replicate",txt:"Botmaster. REPLICATE (also make a Drone)."},
+  swm_lord:{f:"swm",type:"program",cost:4,atk:3,hp:3,deploy:"swarmLord",txt:"Swarm Logic. Deploy: your other units +1 ATK."},
+  swm_surge:{f:"swm",type:"script",cost:3,fx:"tokens",val:3,target:"none",txt:"Hive Surge: create three 1/1 Drones."},
+  swm_overload:{f:"swm",type:"script",cost:2,fx:"swarmBuff",target:"none",txt:"Overload: if you have 4+ units, all your units +1/+1."},
+
+  /* MELTDOWN */
+  melt_imp:{f:"melt",type:"program",cost:1,atk:2,hp:1,txt:"Spark Imp. Fast and fragile."},
+  melt_hound:{f:"melt",type:"program",cost:2,atk:3,hp:2,overheat:true,txt:"Reactor Hound. OVERHEAT."},
+  melt_core:{f:"melt",type:"program",cost:5,atk:5,hp:4,overheat:true,death:"meltBurn3",txt:"Meltdown Core. OVERHEAT. Death: 3 to enemy Core."},
+  melt_lance:{f:"melt",type:"script",cost:1,fx:"burnUnit",val:2,bonus:3,target:"enemyUnit",txt:"Thermal Lance: 2 to a unit (3 if you have an Overheat unit)."},
+  melt_spike:{f:"melt",type:"script",cost:2,fx:"coreBurn",val:4,self:1,target:"none",txt:"Power Spike: 4 to enemy Core, you lose 1 Core."},
+  melt_inject:{f:"melt",type:"script",cost:1,fx:"inject",val:3,self:2,target:"friendly",txt:"Inject: a unit +3 ATK but takes 2 dmg."},
+
+  /* BASTION */
+  bas_wall:{f:"bas",type:"program",cost:3,atk:0,hp:6,guard:true,armor:2,txt:"ICE Wall. GUARD. Armor 2."},
+  bas_sentinel:{f:"bas",type:"program",cost:3,atk:2,hp:4,guard:true,txt:"Sentinel. GUARD."},
+  bas_turret:{f:"bas",type:"program",cost:4,atk:3,hp:5,guard:true,txt:"Turret. GUARD."},
+  bas_main:{f:"bas",type:"program",cost:6,atk:1,hp:8,guard:true,start:"gainCore2",txt:"Mainframe. GUARD. Start: gain 2 Core."},
+  bas_tariff:{f:"bas",type:"script",cost:2,fx:"tax",target:"none",txt:"Tariff: enemy cards cost +1⚡ next turn."},
+  bas_reinforce:{f:"bas",type:"script",cost:1,fx:"fortify",val:3,target:"friendly",txt:"Reinforce: a unit gains GUARD + Armor 3."},
+  bas_patch:{f:"bas",type:"script",cost:1,fx:"gainCore",val:4,target:"none",txt:"Patch Cable: gain 4 Core."},
+  bas_rally:{f:"bas",type:"permanent",cost:4,atk:0,hp:5,rally:true,txt:"Rally Conduit. Whenever you gain Core, an allied unit gets +2 ATK."},
+
+  /* ZERO-DAY */
+  zd_root:{f:"zd",type:"program",cost:1,atk:2,hp:1,stealth:true,txt:"Rootkit. STEALTH."},
+  zd_spy:{f:"zd",type:"program",cost:1,atk:1,hp:1,stealth:true,deploy:"draw1",txt:"Spyware. STEALTH. Deploy: draw a card."},
+  zd_phantom:{f:"zd",type:"program",cost:3,atk:3,hp:2,stealth:true,txt:"Phantom. STEALTH."},
+  zd_back:{f:"zd",type:"program",cost:3,atk:2,hp:4,stealth:true,txt:"Trojan. STEALTH."},
+  zd_assassin:{f:"zd",type:"program",cost:4,atk:4,hp:3,stealth:true,txt:"Assassin Process. STEALTH."},
+  zd_exploit:{f:"zd",type:"script",cost:2,fx:"coreDmg",val:3,target:"none",txt:"Zero-Day Exploit: 3 directly to enemy Core."},
+  zd_virus:{f:"zd",type:"script",cost:2,fx:"stun",target:"enemyUnit",txt:"Virus: stun an enemy unit — it can't act on its next turn."},
+  zd_blades:{f:"zd",type:"script",cost:2,fx:"stealthBuff",val:2,target:"none",txt:"Shadow Blades: your Stealthed units get +2 ATK."},
+
+  /* SINGULARITY */
+  sng_plant:{f:"sng",type:"program",cost:3,atk:0,hp:4,start:"poolPlus2",txt:"Power Plant. Start: +2⚡ to shared pool."},
+  sng_archive:{f:"sng",type:"program",cost:2,atk:1,hp:3,deploy:"draw1",txt:"Data Archive. Deploy: draw a card."},
+  sng_net:{f:"sng",type:"program",cost:4,atk:3,hp:3,deploy:"scaleCompile",txt:"Neural Net. Deploy: +1/+1 per 3 Compile."},
+  sng_engine:{f:"sng",type:"program",cost:7,atk:6,hp:6,costCompile:{per:5,min:3},txt:"Singularity Engine. Costs 1 less per 5 Compile (min 3)."},
+  sng_sub:{f:"sng",type:"script",cost:1,fx:"cantrip",val:1,target:"none",txt:"Subroutine: draw a card. (+Compile)"},
+  sng_quantum:{f:"sng",type:"script",cost:3,fx:"capPlus",val:4,target:"none",txt:"Quantum Core: bank 4⚡ to your Capacitor."},
+  sng_recur:{f:"sng",type:"script",cost:2,fx:"poolPlus",val:5,target:"none",txt:"Surge Routine: +5⚡ to the shared pool."},
+
+  /* higher-quality creatures */
+  syn_boss:{f:"syn",type:"program",cost:5,atk:4,hp:5,leech:true,deploy:"bank3",txt:"Cartel Boss. LEECH. Deploy: bank 3⚡."},
+  swm_queen:{f:"swm",type:"program",cost:5,atk:3,hp:5,deploy:"replicate2",txt:"Hive Queen. Deploy: create two 1/1 Drones."},
+  melt_drake:{f:"melt",type:"program",cost:5,atk:5,hp:4,overheat:true,deploy:"burnAll1",txt:"Inferno Drake. OVERHEAT. Deploy: 1 to all enemy units."},
+  bas_warden:{f:"bas",type:"program",cost:4,atk:2,hp:5,guard:true,deploy:"gainCore3",txt:"Aegis Warden. GUARD. Deploy: gain 3 Core."},
+  zd_op:{f:"zd",type:"program",cost:5,atk:5,hp:4,stealth:true,deploy:"draw1",txt:"Shadow Operative. STEALTH. Deploy: draw a card."},
+  sng_arch:{f:"sng",type:"program",cost:5,atk:4,hp:4,deploy:"scaleCompile",txt:"Architect AI. Deploy: +1/+1 per 3 Compile."},
+
+  /* permanents (artifacts / locations) */
+  perm_capbank:{f:"n",type:"permanent",cost:3,atk:0,hp:3,start:"capPlus1",txt:"Capacitor Bank. Start: +1⚡ to your Capacitor."},
+  perm_server:{f:"n",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"draw1",cd:1,uses:3,cost:1},txt:"Server Farm. LOCATION · Activate (1⚡): draw a card. 3 uses."},
+  syn_laundromat:{f:"syn",type:"permanent",cost:3,atk:0,hp:4,start:"launderEng",txt:"Laundromat. Start: move 2⚡ pool→Capacitor."},
+  swm_bay:{f:"swm",type:"permanent",cost:3,atk:0,hp:4,loc:{fx:"swarmPlus",cd:2,uses:2},txt:"Overclock Bay. LOCATION · Activate: your units +1 ATK. 2 uses."},
+  melt_reactor:{f:"melt",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"coreDmg2",cd:1,uses:3},txt:"Reactor Breach. LOCATION · Activate: 2 to enemy Core. 3 uses."},
+  bas_shield:{f:"bas",type:"permanent",cost:4,atk:0,hp:6,start:"coreEng2",txt:"Shield Generator. Start: gain 2 Core."},
+  zd_relay:{f:"zd",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"draw1",cd:1,uses:4},txt:"Data Siphon. LOCATION · Activate: draw a card. 4 uses."},
+  sng_fusion:{f:"sng",type:"permanent",cost:4,atk:0,hp:4,start:"fusionEng",txt:"Fusion Core. Start: +2⚡ pool, +1 Compile."},
+
+  /* RENEGADES */
+  ren_thrall:{f:"ren",type:"program",cost:1,atk:1,hp:1,death:"martyrBank",txt:"Thrall. Death: bank 1⚡."},
+  ren_zealot:{f:"ren",type:"program",cost:2,atk:2,hp:2,death:"martyrBurn",txt:"Zealot. Death: 2 to enemy Core."},
+  ren_butcher:{f:"ren",type:"program",cost:3,atk:3,hp:3,death:"martyrDraw",txt:"Butcher. Death: draw a card."},
+  ren_revenant:{f:"ren",type:"program",cost:4,atk:4,hp:3,death:"martyrSpawn",txt:"Revenant. Death: summon a 2/2 Ghoul."},
+  ren_warlord:{f:"ren",type:"program",cost:5,atk:4,hp:5,vendetta:true,txt:"Vendetta Warlord. +1 ATK whenever a friendly unit dies."},
+  ren_ghoul:{f:"ren",type:"program",cost:2,atk:2,hp:2,txt:"Ghoul token."},
+  ren_grave:{f:"ren",type:"permanent",cost:3,atk:0,hp:4,harvest:true,txt:"Mass Grave. When a friendly unit dies, +1⚡ to your Capacitor."},
+  ren_sacrifice:{f:"ren",type:"script",cost:1,fx:"sacrifice",target:"friendly",txt:"Ritual Sacrifice: destroy a friendly unit, draw 2."},
+  ren_reanimate:{f:"ren",type:"script",cost:3,fx:"reanimate",target:"none",txt:"Reanimate: summon the last creature that died for you."},
+  ren_plague:{f:"ren",type:"script",cost:4,fx:"empEnemy",val:2,target:"none",txt:"Plague: deal 2 to all enemy units."},
+
+  /* MECHS */
+  mech_scrapling:{f:"mech",type:"program",cost:1,atk:1,hp:1,mech:true,txt:"Scrapling. MECH."},
+  mech_frame:{f:"mech",type:"program",cost:2,atk:2,hp:2,mech:true,txt:"Drone Frame. MECH."},
+  mech_walker:{f:"mech",type:"program",cost:3,atk:3,hp:3,mech:true,deploy:"assemble",txt:"Battle Walker. MECH. Deploy: +1/+1 per other Mech."},
+  mech_tank:{f:"mech",type:"program",cost:4,atk:3,hp:5,mech:true,guard:true,txt:"Siege Tank. MECH. GUARD."},
+  mech_colossus:{f:"mech",type:"program",cost:6,atk:6,hp:6,mech:true,deploy:"scaleScrap",txt:"Iron Colossus. MECH. Deploy: +1/+1 per 2 Scrap."},
+  mech_titan:{f:"mech",type:"program",cost:8,atk:8,hp:8,mech:true,costScrap:{per:2,min:4},deploy:"plated3",txt:"War Titan. MECH. Costs 1 less per 2 Scrap (min 4). Deploy: Armor 3."},
+  mech_reactor:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,start:"scrapEng",txt:"Reactor Core. Start: +1 Scrap and +1⚡ to Capacitor."},
+  mech_forge:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,loc:{fx:"scrapPlus2",cd:1,uses:3},txt:"Assembly Forge. LOCATION · Activate: +2 Scrap. 3 uses."},
+
+  /* CARNEVAL */
+  carn_acrobat:{f:"carn",type:"program",cost:2,atk:1,hp:4,txt:"Acrobat. Cheap body — flip it into a 4/1."},
+  carn_knife:{f:"carn",type:"program",cost:3,atk:4,hp:1,deploy:"knifeThrow",txt:"Knife Thrower. Deploy: deal 1 to the enemy Core. Glass cannon."},
+  carn_mirror:{f:"carn",type:"program",cost:4,atk:2,hp:5,txt:"Mirror Maiden. Sturdy — flip for a 5/2."},
+  carn_strongman:{f:"carn",type:"program",cost:4,atk:1,hp:6,deploy:"weakenStrong",txt:"Strongman. Deploy: an enemy unit loses 2 ATK. Flip for a 6/1."},
+  carn_clown:{f:"carn",type:"program",cost:3,atk:3,hp:3,death:"flipEnemy",txt:"Glitch Clown. Death: swap a random enemy unit's ATK/HP."},
+  carn_ringmaster:{f:"carn",type:"program",cost:5,atk:4,hp:4,deploy:"flipAllies",txt:"Ringmaster. Deploy: swap ATK/HP of your other units."},
+  carn_shrink:{f:"carn",type:"script",cost:2,fx:"shrink",target:"enemyUnit",txt:"Shrink Ray: set an enemy unit to 1/1."},
+  carn_bigtop:{f:"carn",type:"script",cost:3,fx:"anthem",target:"none",txt:"Big Top: your units get +1/+1."},
+  carn_stage:{f:"carn",type:"script",cost:1,fx:"weaken",val:3,target:"enemyUnit",txt:"Stage Fright: an enemy unit loses 3 ATK."},
+  carn_funhouse:{f:"carn",type:"script",cost:3,fx:"swapAll",target:"none",txt:"Funhouse: swap ATK and HP of ALL units."},
+  carn_show:{f:"carn",type:"script",cost:2,fx:"buff",val:2,target:"friendly",txt:"Showstopper: give a friendly unit +2/+2."},
+  /* ===== DEMONS ===== */
+  dem_imp:{f:"dem",type:"program",cost:1,atk:1,hp:1,ascendOnAttack:true,txt:"Imp. Ascend: becomes a 4/4 Demon after it attacks."},
+  dem_whelp:{f:"dem",type:"program",cost:1,atk:2,hp:1,ascendOnAttack:true,txt:"Hellwhelp. Ascend on attack \u2014 becomes a 4/4 Demon."},
+  dem_cultling:{f:"dem",type:"program",cost:1,atk:1,hp:2,ascendOnDeath:true,txt:"Cultling. Ascends to a 4/4 Demon when a friendly unit dies."},
+  dem_acolyte:{f:"dem",type:"program",cost:2,atk:2,hp:2,ascendOnDeath:true,txt:"Acolyte. Ascends to a 4/4 Demon when a friendly unit dies."},
+  dem_fiend:{f:"dem",type:"program",cost:3,atk:3,hp:3,deploy:"transformAlly",txt:"Fiend. Deploy: transform your smallest unit into a 4/4 Demon."},
+  dem_brander:{f:"dem",type:"program",cost:2,atk:2,hp:3,guard:true,txt:"Gatekeeper. Guard."},
+  dem_overlord:{f:"dem",type:"program",cost:5,atk:5,hp:5,txt:"Overlord. A towering brute."},
+  dem_champion:{f:"dem",type:"program",cost:6,atk:2,hp:2,deploy:"championAscend",txt:"Archfiend. Deploy: become a 4/4 Demon and cast Ascendancy free (all your units +2/+2)."},
+  dem_possess:{f:"dem",type:"script",cost:2,fx:"transform",target:"friendly",txt:"Possess: transform a friendly unit into a 4/4 Demon."},
+  dem_brand:{f:"dem",type:"script",cost:1,fx:"grant",kw:"guard",target:"friendly",txt:"Brand of Iron: give a friendly unit Guard."},
+  dem_plate:{f:"dem",type:"script",cost:1,fx:"grant",kw:"armor",val:2,target:"friendly",txt:"Infernal Plate: give a friendly unit Armor 2."},
+  dem_fury:{f:"dem",type:"script",cost:1,fx:"grant",kw:"overheat",target:"friendly",txt:"Demonic Fury: give a friendly unit Overheat (it can attack now)."},
+  dem_demon:{f:"dem",type:"program",cost:0,atk:4,hp:4,demon:true,txt:"Demon. A 4/4 horror."},
+
+  /* ===== CULTISTS ===== */
+  cult_acolyte:{f:"cult",type:"program",cost:1,atk:1,hp:2,deploy:"ritual1",txt:"Acolyte. Deploy: +1 Ritual."},
+  cult_zealot:{f:"cult",type:"program",cost:2,atk:2,hp:2,deploy:"ritual1",txt:"Zealot. Deploy: +1 Ritual."},
+  cult_martyr:{f:"cult",type:"program",cost:1,atk:1,hp:1,death:"cultRitual",txt:"Martyr. Death: +1 Ritual."},
+  cult_summoner:{f:"cult",type:"program",cost:3,atk:2,hp:3,deploy:"ritual2",txt:"Summoner. Deploy: +2 Ritual."},
+  cult_priest:{f:"cult",type:"program",cost:4,atk:3,hp:4,guard:true,deploy:"ritual1",txt:"High Priest. Guard. Deploy: +1 Ritual."},
+  cult_brute:{f:"cult",type:"program",cost:4,atk:4,hp:4,txt:"Flesh Brute. A heavy body."},
+  cult_spawn:{f:"cult",type:"program",cost:0,atk:2,hp:2,txt:"Horror. A summoned monstrosity."},
+  cult_chant:{f:"cult",type:"script",cost:1,fx:"ritual",val:1,target:"none",txt:"Chant: +1 Ritual."},
+  cult_rite:{f:"cult",type:"script",cost:2,fx:"ritual",val:2,target:"none",txt:"Blood Rite: +2 Ritual."},
+  cult_offering:{f:"cult",type:"script",cost:1,fx:"sacRitual",target:"friendly",txt:"Offering: destroy a friendly unit, +2 Ritual, draw a card."},
+
+  /* ===== PROPHETS ===== */
+  prph_acolyte:{f:"prph",type:"program",cost:2,atk:2,hp:2,deploy:"minorRead",txt:"Acolyte. Deploy: add a Minor Arcana to your hand."},
+  prph_oracle:{f:"prph",type:"program",cost:3,atk:2,hp:3,deploy:"setomen",txt:"Oracle. Deploy: set an Omen \u2014 your next Arcana reading is a Major."},
+  prph_seer:{f:"prph",type:"program",cost:3,atk:3,hp:3,deploy:"draw1",txt:"Seer. Deploy: draw a card."},
+  prph_templar:{f:"prph",type:"program",cost:5,atk:4,hp:5,guard:true,txt:"Templar. Guard."},
+  prph_disciple:{f:"prph",type:"program",cost:1,atk:1,hp:2,txt:"Disciple. A humble believer."},
+  prph_zealot:{f:"prph",type:"program",cost:4,atk:4,hp:3,deploy:"minorRead",txt:"Crusader. Deploy: add a Minor Arcana to your hand."},
+  prph_spirit:{f:"prph",type:"program",cost:0,atk:4,hp:4,txt:"Spirit. A summoned 4/4."},
+  prph_tarot:{f:"prph",type:"script",cost:1,fx:"drawArc",tier:"minor",target:"none",txt:"Tarot Reading: add a Minor Arcana to your hand."},
+  prph_vision:{f:"prph",type:"script",cost:2,fx:"drawArc",tier:"major",target:"none",txt:"Grand Vision: add a Major Arcana to your hand."},
+
+  /* ===== ARCANA (drawn to hand, 0-cost) ===== */
+  arc_cups:{f:"prph",type:"script",cost:0,fx:"gainCore",val:3,target:"none",txt:"The Cups \u00b7 Minor: gain 3 Core."},
+  arc_wands:{f:"prph",type:"script",cost:0,fx:"poolPlus",val:3,target:"none",txt:"The Wands \u00b7 Minor: +3\u26a1 to the shared pool."},
+  arc_swords:{f:"prph",type:"script",cost:0,fx:"dmgAny",val:2,target:"any",txt:"The Swords \u00b7 Minor: deal 2 to any unit or Core."},
+  arc_pentacles:{f:"prph",type:"script",cost:0,fx:"bank",val:3,target:"none",txt:"The Pentacles \u00b7 Minor: bank 3\u26a1 to your Capacitor."},
+  arc_star:{f:"prph",type:"script",cost:0,fx:"cantrip",val:1,target:"none",txt:"The Star \u00b7 Minor: draw a card."},
+  arc_strength:{f:"prph",type:"script",cost:0,fx:"buff",val:1,target:"friendly",txt:"Strength \u00b7 Minor: a friendly unit gets +1/+1."},
+  arc_tower:{f:"prph",type:"script",cost:0,fx:"empEnemy",val:3,target:"none",txt:"The Tower \u00b7 Major: deal 3 to all enemy units."},
+  arc_sun:{f:"prph",type:"script",cost:0,fx:"buff",val:3,target:"friendly",txt:"The Sun \u00b7 Major: a friendly unit gets +3/+3."},
+  arc_death:{f:"prph",type:"script",cost:0,fx:"dmgAny",val:5,target:"any",txt:"Death \u00b7 Major: deal 5 to any unit or Core."},
+  arc_wheel:{f:"prph",type:"script",cost:0,fx:"cantrip",val:2,target:"none",txt:"Wheel of Fortune \u00b7 Major: draw 2 cards."},
+  arc_judgement:{f:"prph",type:"script",cost:0,fx:"summonBody",val:4,target:"none",txt:"Judgement \u00b7 Major: summon a 4/4 Spirit."},
+};
+
+const DECKS={
+  syn:[["syn_broker",3],["syn_shark",3],["syn_enf",2],["syn_golem",2],["syn_boss",2],["syn_vault",2],["syn_wiretap",1],["syn_market",2],["syn_extort",2],["syn_insider",2],["syn_laundromat",1],["perm_server",1],["n_spike",2],["n_surge",1],["n_tesla",1]],
+  swm:[["swm_node",6],["swm_master",4],["swm_lord",3],["swm_queen",2],["swm_surge",2],["swm_overload",2],["swm_bay",1],["perm_capbank",1],["swm_drone",3],["n_bruiser",1],["n_surge",1],["n_tesla",1]],
+  melt:[["melt_imp",5],["melt_hound",4],["melt_core",2],["melt_drake",2],["melt_lance",3],["melt_spike",2],["melt_inject",2],["melt_reactor",1],["perm_capbank",1],["n_bruiser",2],["n_surge",1],["n_tesla",1]],
+  bas:[["bas_wall",3],["bas_sentinel",3],["bas_turret",2],["bas_warden",2],["bas_main",1],["bas_rally",2],["bas_tariff",2],["bas_reinforce",2],["bas_patch",2],["bas_shield",1],["perm_server",1],["n_spike",2],["n_surge",1],["n_tesla",1]],
+  zd:[["zd_root",3],["zd_spy",3],["zd_phantom",3],["zd_back",2],["zd_assassin",2],["zd_op",2],["zd_exploit",3],["zd_virus",2],["zd_blades",2],["zd_relay",1],["n_surge",1],["n_tesla",1]],
+  sng:[["sng_plant",3],["sng_archive",3],["sng_net",3],["sng_arch",2],["sng_engine",1],["sng_sub",5],["sng_quantum",2],["sng_recur",2],["sng_fusion",1],["n_surge",1],["n_tesla",1]],
+  ren:[["ren_thrall",4],["ren_zealot",4],["ren_butcher",4],["ren_revenant",2],["ren_warlord",2],["ren_grave",1],["ren_sacrifice",2],["ren_reanimate",3],["ren_plague",2],["n_surge",1],["n_tesla",1]],
+  mech:[["mech_scrapling",5],["mech_frame",4],["mech_walker",4],["mech_tank",3],["mech_colossus",2],["mech_titan",1],["mech_reactor",1],["mech_forge",1],["n_surge",1],["n_tesla",1]],
+  carn:[["carn_acrobat",4],["carn_knife",4],["carn_mirror",2],["carn_strongman",2],["carn_clown",3],["carn_ringmaster",1],["carn_funhouse",1],["carn_show",3],["carn_shrink",2],["carn_bigtop",1],["carn_stage",2],["n_surge",1],["n_tesla",1]],
+  dem:[["dem_imp",4],["dem_whelp",3],["dem_cultling",3],["dem_acolyte",3],["dem_fiend",2],["dem_brander",2],["dem_overlord",1],["dem_champion",1],["dem_possess",2],["dem_brand",2],["dem_plate",1],["dem_fury",2],["n_surge",1],["n_tesla",1]],
+  cult:[["cult_acolyte",4],["cult_zealot",4],["cult_martyr",3],["cult_summoner",2],["cult_priest",2],["cult_brute",3],["cult_chant",2],["cult_rite",2],["cult_offering",2],["n_surge",1],["n_tesla",1]],
+  prph:[["prph_acolyte",4],["prph_oracle",3],["prph_seer",3],["prph_zealot",3],["prph_templar",2],["prph_disciple",4],["prph_tarot",3],["prph_vision",1],["n_surge",1],["n_tesla",1]],
+};
+const ARCANA_MINOR=["arc_cups","arc_wands","arc_swords","arc_pentacles","arc_star","arc_strength"];
+const ARCANA_MAJOR=["arc_tower","arc_sun","arc_death","arc_wheel","arc_judgement"];
+
+/* ===================== STATE ===================== */
+
+/* ===================== KEYWORD / MECHANIC GLOSSARY ===================== */
+const KEYWORDS=[
+  {n:"Guard",d:"Enemies must attack this before your Core or your other units."},
+  {n:"Leech",d:"When this attacks, bank 1⚡ into your Capacitor (or steal 1 from the enemy's)."},
+  {n:"Overheat",d:"Can attack the turn it's played (no summoning sickness), but loses 1 HP at the start of each of your turns."},
+  {n:"Stealth",d:"Can't be attacked or targeted until it attacks — and it can strike anyone, ignoring Guards."},
+  {n:"Stun",d:"A stunned unit can't attack or act on its next turn."},
+  {n:"Martyr",d:"Has a 'when this dies' effect — see the card's text."},
+  {n:"Mech",d:"Counts for Mech synergies; when it dies you gain +1 Scrap."},
+  {n:"Assemble",d:"On deploy, gains +1/+1 for each other Mech you control."},
+  {n:"Overload",d:"Costs extra Capacitor energy (banked ⚡) on top of its Watt cost."},
+  {n:"Invert",d:"Swap a unit's ATK and HP — Carneval's signature trick."},
+  {n:"Ascend",d:"A small Demon unit transforms into a 4/4 Demon — on attack, when a friendly unit dies, or via Possess."},
+  {n:"Demon Aura",d:"Demons' Ascendancy permanently gives all their units (current and future) +2/+2."},
+  {n:"Ritual",d:"Cultists stack Ritual; at 3 it summons a Horror and resets. Each Horror is bigger than the last, growing +1/+1 each time (2/2 up to 10/10)."},
+  {n:"Arcana",d:"Prophets draw Minor and Major Arcana — free 0-cost spell cards added to your hand."},
+  {n:"Omen",d:"A set fate: your next Arcana reading draws a Major instead of a Minor."}
+];
+const MECHANICS=[
+  {n:"Shared Pool",d:"The ⚡ in the center is shared. Whatever you don't spend carries to your opponent — use it or lose it."},
+  {n:"Capacitor",d:"Your private ⚡ store, safe from theft. Bank into it, then spend it like pool ⚡."},
+  {n:"Compile",d:"+1 each time you play a script. Singularity cards get bigger / cheaper with it."},
+  {n:"Scrap",d:"Mechs build Scrap each turn and when a Mech dies; it powers their giant units."},
+  {n:"Charge / Ultimate",d:"Your Ultimate gains 1 charge per turn (+1 when you use your Core Power). Unleash it when full."}
+];
+const KWMAP={};KEYWORDS.forEach(o=>KWMAP[o.n]=o.d);
+
+</script>
+<script>
+/* OVERCLOCK — core.js  (auto-split; loaded as a plain <script>, shares global scope) */
+let S,uidc=1,selectedUnit=null,pendingScript=null,pendingPower=null,busy=false;
+/* online state */
+let ONLINE=false,ROLE=null,MY="me",peer=null,conn=null,myFac=null,guestFac=null;
+const $=id=>document.getElementById(id);
+const other=p=>p==="me"?"ai":"me";
+const serialize=()=>JSON.parse(JSON.stringify(S));
+let recentAct=null;let spellFx=null;
+const POWERS={
+  syn:{core:{name:"Counterfeit",cost:1,target:"none",fx:"counterfeit",txt:"Counterfeit Bills: generate 2⚡ straight into your Capacitor."},
+       draw:{name:"Audit",cost:2,target:"none",fx:"audit",txt:"Draw a card and bank 1⚡."},
+       ult:{name:"Hostile Takeover",cost:0,target:"none",fx:"ult_takeover",txt:"Steal ALL Watts from the enemy Capacitor and draw 2."}},
+  swm:{core:{name:"Spawn Drone",cost:2,target:"none",fx:"spawn",txt:"Create a 1/1 Drone."},
+       draw:{name:"Recruit",cost:2,target:"none",fx:"recruit",txt:"Draw a card; draw 2 if you have 3+ units."},
+       ult:{name:"Swarm Protocol",cost:0,target:"none",fx:"ult_swarm",txt:"Make three 1/1 Drones and give all your units +1/+1."}},
+  melt:{core:{name:"Spark",cost:2,target:"any",fx:"spark",txt:"Deal 1 to any unit or the enemy Core."},
+       draw:{name:"Scavenge",cost:1,target:"none",fx:"scavenge",txt:"Draw a card, lose 1 Core."},
+       ult:{name:"Meltdown",cost:0,target:"none",fx:"ult_meltdown",txt:"Deal 4 to the enemy Core and 2 to all enemy units."}},
+  bas:{core:{name:"Patch",cost:2,target:"none",fx:"patch",txt:"Gain 3 Core."},
+       draw:{name:"Archive",cost:2,target:"none",fx:"archive",txt:"Draw a card and gain 1 Core."},
+       ult:{name:"Lockdown",cost:0,target:"none",fx:"ult_lockdown",txt:"Gain 8 Core; all your units gain Armor 3."}},
+  zd:{core:{name:"Cloak",cost:1,target:"friendly",fx:"cloak",txt:"Give a friendly unit Stealth."},
+       draw:{name:"Datamine",cost:2,target:"none",fx:"datamine",txt:"Draw a card; draw 2 if you control a Stealth unit."},
+       ult:{name:"Total Breach",cost:0,target:"none",fx:"ult_breach",txt:"Deal 6 directly to the enemy Core."}},
+  sng:{core:{name:"Overclock",cost:1,target:"none",fx:"overclock",txt:"+3⚡ to the shared pool and +1 Compile."},
+       draw:{name:"Recompile",cost:2,target:"none",fx:"recompile",txt:"Draw a card and +1 Compile."},
+       ult:{name:"Singularity",cost:0,target:"none",fx:"ult_singularity",txt:"+8⚡ to your Capacitor, draw 2, +3 Compile."}},
+  ren:{core:{name:"Blood Pact",cost:1,target:"friendly",fx:"bloodpact",txt:"Destroy a friendly unit to raise a 2/2 Ghoul."},
+       draw:{name:"Grave Robbing",cost:2,target:"none",fx:"graverob",txt:"Draw a card; draw 2 if one of your units has died."},
+       ult:{name:"Open the Crypt",cost:0,target:"none",fx:"ult_crypt",txt:"Summon up to 3 of your fallen creatures (or Ghouls)."}},
+  mech:{core:{name:"Fabricate",cost:2,target:"none",fx:"fabricate",txt:"+2 Scrap."},
+       draw:{name:"Salvage",cost:2,target:"none",fx:"salvage",txt:"Draw a card; draw 2 if you have 4+ Scrap."},
+       ult:{name:"Overdrive Protocol",cost:0,target:"none",fx:"ult_overdrive",txt:"Your biggest Mech gets +4/+4 and Armor 3 (or summon an Iron Colossus)."}},
+  carn:{core:{name:"Swap",cost:1,target:"unit",fx:"swap",txt:"Swap a unit's ATK and HP."},
+       draw:{name:"Sideshow",cost:2,target:"none",fx:"sideshow",txt:"Draw a card; draw 2 if you control a unit with more ATK than HP."},
+       ult:{name:"Hall of Mirrors",cost:0,target:"none",fx:"ult_swapboards",txt:"Swap your entire board with the enemy's."}},
+  dem:{core:{name:"Possession",cost:2,target:"friendly",fx:"transform",txt:"Transform a friendly unit into a 4/4 Demon."},
+       draw:{name:"Dark Pact",cost:1,target:"none",fx:"darkpact",txt:"Draw a card; lose 1 Core."},
+       ult:{name:"Ascendancy",cost:0,target:"none",fx:"ult_ascend",txt:"Permanently give all your units — current and future — +2/+2."}},
+  cult:{core:{name:"Conduct Ritual",cost:1,target:"none",fx:"ritual1",txt:"+1 Ritual. At 3 Ritual, summon a growing Horror (resets)."},
+       draw:{name:"Dark Study",cost:2,target:"none",fx:"darkstudy",txt:"Draw a card; draw 2 if you control a Horror."},
+       ult:{name:"Doomsday",cost:0,target:"none",fx:"ult_doomsday",txt:"Destroy ALL units; conduct Ritual once for each unit destroyed."}},
+  prph:{core:{name:"Minor Arcana",cost:1,target:"none",fx:"minorRead",txt:"Add a random Minor Arcana to your hand and +1⚡ to the pool."},
+       draw:{name:"Foretell",cost:2,target:"none",fx:"foretell",txt:"Draw a card and set an Omen — your next Arcana reading is a Major."},
+       ult:{name:"Revelation",cost:0,target:"none",fx:"ult_revelation",txt:"Add two Major Arcana to your hand."}},
+};
+/* 4th power slot: per-faction Capacitor generator (Syndicate gets a board effect instead) */
+const BANKPOWER={
+  swm:{name:"Stockpile",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  melt:{name:"Coolant Reserves",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  bas:{name:"Treasury",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  zd:{name:"Cold Wallet",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  sng:{name:"Battery Bank",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  ren:{name:"Blood Money",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  mech:{name:"Power Cell",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  carn:{name:"Ticket Sales",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  syn:{name:"Buyout",cost:5,target:"enemyUnit",fx:"steal",txt:"Generator: take control of an enemy unit (enters tapped)."},
+  dem:{name:"Soul Tithe",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  cult:{name:"Blood Tithe",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."},
+  prph:{name:"Offering",cost:1,target:"none",fx:"bank",val:3,txt:"Generator: bank up to 3⚡ to your Capacitor."}
+};
+const facCol=f=>FACTIONS[f]?`var(${FACTIONS[f].col})`:"var(--line)";
+
+function buildDeck(fac){
+  const d=[];for(const[id,n]of DECKS[fac])for(let i=0;i<n;i++)d.push(id);
+  for(let i=d.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]];}return d;
+}
+function mkUnit(id){const c=DB[id];return{uid:uidc++,id,name:c.name||cardName(id),atk:c.atk,hp:c.hp,maxHp:c.hp,
+  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,
+  start:c.start,death:c.death,deploy:c.deploy,type:c.type,loc:c.loc,cd:0,uses:c.loc?c.loc.uses:0,mech:!!c.mech,harvest:!!c.harvest,vendetta:!!c.vendetta,ready:false};}
+function cardName(id){return DB[id].txt.split(/[.:]/)[0];}
+
+/* ===================== CARD ART (inline SVG glyphs) ===================== */
+const ART={
+  /* neutral */
+  n_runt:'<rect x="18" y="10" width="12" height="12" rx="2"/><circle cx="24" cy="16" r="2" fill="currentColor"/>',
+  n_grunt:'<rect x="9" y="10" width="12" height="12" rx="2"/><rect x="27" y="10" width="12" height="12" rx="2"/><path d="M21 16h6"/>',
+  n_bruiser:'<polygon points="24,5 38,13 38,25 24,30 10,25 10,13"/><circle cx="24" cy="18" r="3" fill="currentColor"/>',
+  n_spike:'<polygon points="27,3 15,18 23,18 21,30 33,13 25,13" fill="currentColor"/>',
+  n_surge:'<path d="M10 16h6 M32 16h6 M24 6v6 M24 20v6" stroke-width="2.5"/><circle cx="24" cy="16" r="5"/><circle cx="24" cy="16" r="2" fill="currentColor"/>',
+  n_tesla:'<path d="M24 4l-5 12h5l-5 12 13-16h-6l5-8z" fill="currentColor"/><path d="M14 28h20"/>',
+  /* syndicate */
+  syn_broker:'<circle cx="24" cy="16" r="9"/><path d="M24 10v12 M21 13c0-1.6 6-1.6 6 0s-6 1.4-6 3 6 1.6 6 0"/>',
+  syn_shark:'<path d="M9 24c9 0 15-2 21-13 1 9-4 13-21 13z"/><path d="M9 24h23"/>',
+  syn_enf:'<path d="M24 4l12 4v8c0 8-6 11-12 13-6-2-12-5-12-13V8z"/><path d="M18 14h12 M18 19h12"/>',
+  syn_golem:'<circle cx="24" cy="16" r="10"/><circle cx="24" cy="16" r="3" fill="currentColor"/><path d="M24 4v4 M24 24v4 M12 16h4 M32 16h4 M16 8l3 3 M32 24l-3-3"/>',
+  syn_market:'<path d="M16 12h16l2 16H14z"/><path d="M19 12a5 5 0 0110 0"/>',
+  syn_extort:'<circle cx="31" cy="11" r="5"/><path d="M8 23h15 M23 23l-4-3 M23 23l-4 3"/>',
+  syn_insider:'<path d="M14 26V16 M21 26V11 M28 26V18 M35 26V8"/><path d="M12 26h26"/>',
+  /* swarm */
+  swm_drone:'<rect x="20" y="13" width="8" height="6" rx="1"/><circle cx="14" cy="11" r="3"/><circle cx="34" cy="11" r="3"/><circle cx="14" cy="22" r="3"/><circle cx="34" cy="22" r="3"/><path d="M18 14l-2-1 M30 14l2-1 M18 18l-2 1 M30 18l2 1"/>',
+  swm_node:'<circle cx="24" cy="16" r="4"/><circle cx="10" cy="8" r="2.5"/><circle cx="38" cy="8" r="2.5"/><circle cx="10" cy="24" r="2.5"/><circle cx="38" cy="24" r="2.5"/><path d="M21 14l-9-5 M27 14l9-5 M21 18l-9 5 M27 18l9 5"/>',
+  swm_master:'<circle cx="24" cy="16" r="5"/><path d="M19 13l-9-4 M19 16h-10 M19 19l-9 4 M29 13l9-4 M29 16h10 M29 19l9 4"/>',
+  swm_lord:'<path d="M11 25h26 M11 25l2-13 6 6 5-9 5 9 6-6 2 13"/>',
+  swm_surge:'<circle cx="14" cy="12" r="2.6" fill="currentColor"/><circle cx="24" cy="9" r="2.6" fill="currentColor"/><circle cx="34" cy="12" r="2.6" fill="currentColor"/><circle cx="18" cy="21" r="2.6" fill="currentColor"/><circle cx="30" cy="21" r="2.6" fill="currentColor"/><circle cx="24" cy="25" r="2.6" fill="currentColor"/>',
+  swm_overload:'<path d="M16 25V10 M11 15l5-5 5 5 M32 25V10 M27 15l5-5 5 5"/>',
+  /* meltdown */
+  melt_imp:'<polygon points="24,4 27,14 37,16 27,18 24,28 21,18 11,16 21,14" fill="currentColor"/>',
+  melt_hound:'<path d="M24 5c4 6-2 8 0 12 3-1 3-5 3-5 3 3 4 8 0 12-2 2-5 3-7 3-5 0-9-4-9-9 0-6 6-7 5-12 2 1 3 5 3 5 1-3 3-5-1-8z"/>',
+  melt_core:'<circle cx="24" cy="16" r="3" fill="currentColor"/><path d="M24 13l5-9a11 11 0 00-10 0z M27 18l9 1a11 11 0 01-5 9z M21 18l-9 1a11 11 0 005 9z"/>',
+  melt_lance:'<path d="M8 25L33 8" stroke-width="3"/><path d="M33 8h5v5 M27 11l8 8"/>',
+  melt_spike:'<circle cx="24" cy="16" r="4" fill="currentColor"/><path d="M24 4v6 M24 22v6 M12 16h6 M30 16h6 M15 7l4 4 M33 25l-4-4 M33 7l-4 4 M15 25l4-4"/>',
+  melt_inject:'<path d="M9 27l4-4 M14 22l9-9 6 6-9 9z M21 14l9-9 M28 7l3 3 M24 11l4 4"/>',
+  /* bastion */
+  bas_wall:'<rect x="10" y="7" width="28" height="18" rx="1"/><path d="M10 13h28 M10 19h28 M18 7v6 M28 7v6 M14 13v6 M24 13v6 M34 13v6 M19 19v6 M29 19v6"/>',
+  bas_sentinel:'<path d="M24 4l12 4v7c0 8-7 12-12 14-5-2-12-6-12-14V8z"/>',
+  bas_turret:'<rect x="13" y="18" width="22" height="8" rx="2"/><rect x="22" y="7" width="6" height="13" rx="1"/><circle cx="24" cy="22" r="2" fill="currentColor"/>',
+  bas_main:'<rect x="14" y="6" width="20" height="21" rx="2"/><path d="M14 13h20 M14 20h20"/><circle cx="18" cy="9.5" r="1.2" fill="currentColor"/><circle cx="18" cy="16.5" r="1.2" fill="currentColor"/><circle cx="18" cy="23.5" r="1.2" fill="currentColor"/>',
+  bas_tariff:'<circle cx="17" cy="11" r="3.2"/><circle cx="31" cy="21" r="3.2"/><path d="M33 8L15 24"/>',
+  bas_reinforce:'<path d="M24 5l10 3v6c0 6-5 10-10 12-5-2-10-6-10-12V8z"/><path d="M24 11v8 M20 15h8"/>',
+  bas_patch:'<rect x="13" y="11" width="22" height="10" rx="3"/><path d="M24 13v6 M21 16h6"/><path d="M9 16h4 M35 16h4"/>',
+  /* zero-day */
+  zd_root:'<path d="M13 10h22v8c0 5-5 8-11 8s-11-3-11-8z"/><circle cx="19" cy="16" r="2" fill="currentColor"/><circle cx="29" cy="16" r="2" fill="currentColor"/>',
+  zd_spy:'<path d="M9 16s6-7 15-7 15 7 15 7-6 7-15 7-15-7-15-7z"/><circle cx="24" cy="16" r="3.2" fill="currentColor"/>',
+  zd_phantom:'<path d="M14 27V15a10 10 0 0120 0v12l-3-3-3 3-4-3-4 3-3-3z"/><circle cx="20" cy="15" r="1.6" fill="currentColor"/><circle cx="28" cy="15" r="1.6" fill="currentColor"/>',
+  zd_back:'<path d="M13 27V17c0-3 2-6 5-7l-2-5 4-1 2 4 6 1 4-4 3 2-3 5 1 12"/><circle cx="27" cy="14" r="1.4" fill="currentColor"/>',
+  zd_virus:'<circle cx="24" cy="16" r="6"/><circle cx="24" cy="16" r="2" fill="currentColor"/><path d="M24 4v4 M24 24v4 M12 16h4 M32 16h4 M14 6l3 3 M34 26l-3-3 M34 6l-3 3 M14 26l3-3"/>',
+  zd_assassin:'<path d="M24 3l3 17h-6z"/><path d="M24 20v7 M19 26h10 M21 22h6"/>',
+  zd_exploit:'<ellipse cx="24" cy="17" rx="6" ry="8"/><path d="M24 9V5 M21 6l-3-2 M27 6l3-2 M18 14l-6-2 M18 20l-6 2 M30 14l6-2 M30 20l6 2"/>',
+  zd_cloak:'<path d="M10 16s6-6 14-6c2 0 4 .4 6 1 M38 16s-3 3-8 5"/><path d="M14 25L34 7" stroke-dasharray="3 2"/>',
+  zd_bomb:'<circle cx="22" cy="20" r="8"/><path d="M28 13l4-4 M32 9l1-3 3 1"/><path d="M19 18a3 3 0 013-2"/>',
+  /* singularity */
+  sng_plant:'<rect x="11" y="11" width="23" height="11" rx="2"/><rect x="34" y="14" width="3" height="5"/><path d="M23 13l-4 6h4l-4 5"/>',
+  sng_archive:'<ellipse cx="24" cy="9" rx="10" ry="3"/><path d="M14 9v14c0 1.7 4.5 3 10 3s10-1.3 10-3V9 M14 16c0 1.7 4.5 3 10 3s10-1.3 10-3"/>',
+  sng_net:'<circle cx="12" cy="10" r="2.5"/><circle cx="12" cy="22" r="2.5"/><circle cx="24" cy="16" r="2.8"/><circle cx="36" cy="10" r="2.5"/><circle cx="36" cy="22" r="2.5"/><path d="M14 11l8 4 M14 21l8-4 M26 15l8-4 M26 17l8 4"/>',
+  sng_engine:'<rect x="14" y="8" width="20" height="20" rx="2"/><rect x="20" y="14" width="8" height="8" rx="1" fill="currentColor"/><path d="M19 8V4 M24 8V4 M29 8V4 M19 28v4 M24 28v4 M29 28v4 M14 14h-4 M14 22h-4 M34 14h4 M34 22h4"/>',
+  sng_sub:'<path d="M18 8l-6 8 6 8 M30 8l6 8-6 8"/>',
+  sng_quantum:'<circle cx="24" cy="16" r="2" fill="currentColor"/><ellipse cx="24" cy="16" rx="12" ry="4.5"/><ellipse cx="24" cy="16" rx="12" ry="4.5" transform="rotate(60 24 16)"/><ellipse cx="24" cy="16" rx="12" ry="4.5" transform="rotate(120 24 16)"/>',
+  sng_recur:'<path d="M30 12a8 8 0 10-2 10"/><path d="M30 6v6h-6"/>',
+  syn_boss:'<circle cx="24" cy="11" r="5"/><path d="M14 26c0-6 4-9 10-9s10 3 10 9"/><path d="M24 6V3"/>',
+  swm_queen:'<circle cx="24" cy="14" r="5"/><path d="M19 12l-7-4 M29 12l7-4 M24 19v8 M20 27h8"/><path d="M21 7l3-3 3 3"/>',
+  melt_drake:'<path d="M10 20c6-2 10-8 14-14 2 6 0 10-2 13 4 0 8-3 10-7 1 7-4 13-12 13-6 0-10-2-10-5z"/>',
+  bas_warden:'<path d="M24 4l11 4v7c0 8-6 12-11 14-5-2-11-6-11-14V8z"/><path d="M19 14h10 M24 11v8"/>',
+  zd_op:'<path d="M14 27V15a10 10 0 0120 0v12"/><path d="M18 14l4 2 M30 14l-4 2"/><circle cx="24" cy="22" r="2" fill="currentColor"/>',
+  sng_arch:'<rect x="15" y="9" width="18" height="18" rx="2"/><path d="M20 9v18 M28 9v18 M15 15h18 M15 21h18"/>',
+  perm_capbank:'<rect x="12" y="12" width="20" height="11" rx="2"/><rect x="32" y="15" width="3" height="5"/><path d="M20 14v7 M24 14v7 M28 14v7"/>',
+  perm_server:'<rect x="14" y="6" width="20" height="21" rx="2"/><path d="M14 13h20 M14 20h20"/><circle cx="30" cy="9.5" r="1.2" fill="currentColor"/><circle cx="30" cy="16.5" r="1.2" fill="currentColor"/>',
+  syn_laundromat:'<rect x="13" y="9" width="22" height="18" rx="3"/><circle cx="24" cy="18" r="6"/><circle cx="24" cy="18" r="2.5"/>',
+  swm_bay:'<circle cx="24" cy="16" r="6"/><path d="M24 4v4 M24 24v4 M12 16h4 M32 16h4 M15 7l3 3 M33 25l-3-3 M33 7l-3 3 M15 25l3-3"/>',
+  melt_reactor:'<circle cx="24" cy="16" r="9"/><path d="M24 9v7l5 3"/><path d="M24 4v3 M24 25v3 M11 16h3 M34 16h3"/>',
+  bas_shield:'<path d="M24 4l12 4v8c0 9-7 12-12 14-5-2-12-5-12-14V8z"/><path d="M24 12v8 M20 16h8"/>',
+  zd_relay:'<path d="M24 10v12"/><circle cx="24" cy="24" r="2.5"/><path d="M16 8a11 11 0 000 16 M32 8a11 11 0 010 16 M19 11a6 6 0 000 10 M29 11a6 6 0 010 10"/>',
+  sng_fusion:'<circle cx="24" cy="16" r="3" fill="currentColor"/><ellipse cx="24" cy="16" rx="11" ry="4"/><ellipse cx="24" cy="16" rx="11" ry="4" transform="rotate(60 24 16)"/><ellipse cx="24" cy="16" rx="11" ry="4" transform="rotate(120 24 16)"/>',
+  ren_thrall:'<circle cx="24" cy="14" r="6"/><circle cx="21" cy="14" r="1.3" fill="currentColor"/><circle cx="27" cy="14" r="1.3" fill="currentColor"/><path d="M20 21l-2 6 M28 21l2 6 M24 20v7"/>',
+  ren_zealot:'<path d="M24 5l4 8h-8z"/><path d="M24 13v11 M18 18h12 M20 28h8"/>',
+  ren_butcher:'<path d="M14 27l11-16"/><path d="M14 27h6"/><path d="M25 11l3 4-8 12"/><circle cx="30" cy="9" r="3"/>',
+  ren_revenant:'<path d="M16 27V15a8 8 0 0116 0v12l-3-2-2 2-3-2-3 2-2-2z"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="28" cy="15" r="1.4" fill="currentColor"/>',
+  ren_warlord:'<path d="M24 4l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="currentColor"/>',
+  ren_ghoul:'<path d="M17 27V16a7 7 0 0114 0v11l-2-2-2 2-3-2-3 2-2-2z"/>',
+  ren_grave:'<path d="M14 27V16a10 10 0 0120 0v11z"/><path d="M24 14v8 M20 18h8"/><path d="M9 27h30"/>',
+  ren_sacrifice:'<path d="M24 5v17 M16 12h16 M19 27h10"/><circle cx="24" cy="25" r="2" fill="currentColor"/>',
+  ren_reanimate:'<path d="M30 14a8 8 0 10-1 9"/><path d="M30 7v7h-7"/><circle cx="20" cy="16" r="1.6" fill="currentColor"/>',
+  ren_plague:'<circle cx="24" cy="16" r="9"/><circle cx="20" cy="14" r="1.4" fill="currentColor"/><circle cx="28" cy="14" r="1.4" fill="currentColor"/><circle cx="24" cy="20" r="1.4" fill="currentColor"/>',
+  mech_scrapling:'<rect x="18" y="14" width="12" height="10" rx="1"/><circle cx="21" cy="18" r="1.3" fill="currentColor"/><circle cx="27" cy="18" r="1.3" fill="currentColor"/><path d="M20 14l-2-4 M28 14l2-4 M20 24v3 M28 24v3"/>',
+  mech_frame:'<rect x="16" y="12" width="16" height="13" rx="2"/><path d="M20 12v-3 M28 12v-3 M16 18h-4 M32 18h4 M20 25v3 M28 25v3"/><circle cx="24" cy="18" r="2.5"/>',
+  mech_walker:'<rect x="18" y="8" width="12" height="10" rx="2"/><circle cx="24" cy="13" r="2" fill="currentColor"/><path d="M18 18l-5 10 M24 18v10 M30 18l5 10 M11 28h4 M22 28h4 M33 28h4"/>',
+  mech_tank:'<rect x="12" y="16" width="24" height="9" rx="3"/><rect x="21" y="9" width="6" height="9" rx="1"/><circle cx="16" cy="25" r="2.5"/><circle cx="24" cy="25" r="2.5"/><circle cx="32" cy="25" r="2.5"/>',
+  mech_colossus:'<rect x="16" y="6" width="16" height="14" rx="2"/><circle cx="21" cy="12" r="1.6" fill="currentColor"/><circle cx="27" cy="12" r="1.6" fill="currentColor"/><path d="M16 20l-4 8 M24 20v8 M32 20l4 8 M12 14h-3 M36 14h3"/>',
+  mech_titan:'<rect x="15" y="5" width="18" height="15" rx="2"/><circle cx="20" cy="11" r="2" fill="currentColor"/><circle cx="28" cy="11" r="2" fill="currentColor"/><path d="M24 15v3 M15 20l-5 9 M24 20v9 M33 20l5 9 M10 12h-4 M38 12h-4 M19 29h4 M25 29h4"/>',
+  mech_reactor:'<circle cx="24" cy="16" r="8"/><rect x="20" y="12" width="8" height="8" rx="1" fill="currentColor"/><path d="M24 4v4 M24 24v4 M12 16h4 M32 16h4"/>',
+  mech_forge:'<path d="M12 26h24 M14 26v-6h20v6 M18 20l2-8h8l2 8 M24 6v6"/><circle cx="24" cy="9" r="1.3" fill="currentColor"/>',
+  carn_acrobat:'<circle cx="24" cy="9" r="4"/><path d="M24 13v8 M16 17l8-2 8 2 M18 28l6-7 6 7"/>',
+  carn_knife:'<path d="M24 4l3 14h-6z"/><path d="M24 18v8 M19 26h10"/><path d="M10 26l8-4 M38 26l-8-4"/>',
+  carn_mirror:'<ellipse cx="24" cy="15" rx="8" ry="11"/><ellipse cx="24" cy="15" rx="4" ry="6" fill="currentColor" opacity=".3"/><path d="M20 27h8"/>',
+  carn_strongman:'<circle cx="24" cy="9" r="4"/><path d="M14 16h20 M12 16l-3 3 3 3 M36 16l3 3-3 3 M24 13v9 M19 28l5-6 5 6"/>',
+  carn_clown:'<circle cx="24" cy="15" r="9"/><circle cx="24" cy="18" r="2" fill="currentColor"/><circle cx="20" cy="13" r="1.4" fill="currentColor"/><circle cx="28" cy="13" r="1.4" fill="currentColor"/><path d="M24 6V3"/>',
+  carn_ringmaster:'<rect x="16" y="10" width="16" height="4"/><path d="M18 14v12h12V14"/><path d="M24 6v4"/><circle cx="24" cy="20" r="2.5" fill="currentColor"/>',
+  carn_mirrorfx:'<path d="M24 4v24 M14 10l10-6 10 6v8l-10 6-10-6z"/>',
+  carn_funhouse:'<path d="M10 26V14l7-8 7 8 7-8 7 8v12z"/><path d="M17 6v20 M31 6v20"/>',
+  carn_show:'<path d="M24 6l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="currentColor"/>',
+  syn_vault:'<rect x="12" y="9" width="24" height="20" rx="2"/><circle cx="24" cy="19" r="5"/><path d="M24 14v5l3 2"/>',
+  syn_wiretap:'<path d="M15 27a9 9 0 019-13 7 7 0 017 7"/><circle cx="15" cy="27" r="2"/><path d="M31 11l4-3 M33 16l5-2"/>',
+  bas_rally:'<path d="M15 30V8 M15 9h15l-3 4 3 4H15"/><path d="M30 23l3 3 3-3"/>',
+  zd_blades:'<path d="M14 30L29 13 M29 13l4-2-2 4 M14 30l-2 4 4-2"/><path d="M34 30L19 13 M19 13l-4-2 2 4 M34 30l2 4-4-2"/>',
+  dem_imp:'<path d="M18 12l-3-4 M30 12l3-4"/><circle cx="24" cy="20" r="7"/><path d="M21 19h.01 M27 19h.01 M21 24q3 2 6 0"/>',
+  dem_whelp:'<path d="M16 13l-3-5 M32 13l3-5"/><path d="M24 12l7 8-7 8-7-8z"/><path d="M22 19h.01 M26 19h.01"/>',
+  dem_cultling:'<path d="M24 8l5 6h-10z"/><circle cx="24" cy="21" r="6"/><path d="M24 15v12 M18 21h12"/>',
+  dem_acolyte:'<path d="M24 7v6 M19 9l3 5 M29 9l-3 5"/><circle cx="24" cy="22" r="7"/><path d="M21 21h.01 M27 21h.01"/>',
+  dem_fiend:'<path d="M14 12l-3-5 M34 12l3-5"/><path d="M24 10c7 0 11 6 11 12s-5 4-11 4-11 2-11-4 4-12 11-12z"/><path d="M20 20h.01 M28 20h.01"/>',
+  dem_brander:'<rect x="14" y="11" width="20" height="16" rx="2"/><path d="M24 11v16"/><path d="M19 8l3 4 M29 8l-3 4"/>',
+  dem_overlord:'<path d="M12 14l-3-6 M36 14l3-6"/><path d="M24 8l4 6 7 2-5 6 1 8-7-4-7 4 1-8-5-6 7-2z"/>',
+  dem_champion:'<path d="M24 5l5 7h-10z"/><path d="M14 13l-3-5 M34 13l3-5"/><path d="M24 13l8 6-3 9H19l-3-9z"/><path d="M21 21h.01 M27 21h.01"/>',
+  dem_possess:'<circle cx="24" cy="18" r="6"/><path d="M24 24v8 M20 28h8"/><path d="M19 14l3 3 M29 14l-3 3"/>',
+  dem_brand:'<path d="M24 7v22 M16 15h16 M19 11l-3 4 3 4 M29 11l3 4-3 4"/>',
+  dem_plate:'<path d="M24 7l12 4v8c0 7-6 11-12 13-6-2-12-6-12-13v-8z"/><path d="M24 13v12"/>',
+  dem_fury:'<path d="M26 6l-10 14h7l-3 12 12-16h-7z" fill="currentColor"/>',
+  dem_demon:'<path d="M13 12l-4-6 M35 12l4-6"/><path d="M24 9c8 0 12 6 12 13s-6 5-12 5-12 2-12-5 4-13 12-13z"/><path d="M19 19h.01 M29 19h.01 M20 24q4 3 8 0"/>',
+  cult_acolyte:'<path d="M24 7c5 0 8 5 8 12v8H16v-8c0-7 3-12 8-12z"/><path d="M21 19q3 3 6 0"/>',
+  cult_zealot:'<path d="M24 6c6 0 9 6 9 14v6H15v-6c0-8 3-14 9-14z"/><path d="M20 18h.01 M28 18h.01"/>',
+  cult_martyr:'<path d="M24 8v18 M17 14h14"/><circle cx="24" cy="28" r="2"/>',
+  cult_summoner:'<circle cx="24" cy="20" r="11"/><path d="M24 9l3.5 10.7H38l-8.6 6.2 3.3 10.1L24 29.2l-8.7 6.8 3.3-10.1L10 19.7h10.5z" stroke-width="1.2"/>',
+  cult_priest:'<path d="M24 5c6 0 10 6 10 15v7H14v-7C14 11 18 5 24 5z"/><path d="M24 12v9 M20 16h8"/>',
+  cult_brute:'<path d="M16 12h16v6c0 6-4 10-8 12-4-2-8-6-8-12z"/><path d="M20 18h.01 M28 18h.01"/>',
+  cult_spawn:'<circle cx="24" cy="22" r="8"/><path d="M24 8v6 M18 12l3 4 M30 12l-3 4 M20 22h.01 M28 22h.01 M19 26q5 4 10 0"/>',
+  cult_chant:'<path d="M22 8v14 M22 8l8 2v10"/><circle cx="20" cy="24" r="3"/><circle cx="28" cy="26" r="3"/>',
+  cult_rite:'<path d="M24 8l3 8h8l-6.5 5 2.5 8-7-5-7 5 2.5-8L9 16h8z"/>',
+  cult_offering:'<path d="M14 14h20 M24 14v6 M18 20h12l-2 8H20z"/><path d="M21 9l3 4 3-4"/>',
+  prph_acolyte:'<path d="M10 20q14-12 28 0 q-14 12-28 0z"/><circle cx="24" cy="20" r="4"/>',
+  prph_oracle:'<circle cx="24" cy="20" r="9"/><circle cx="24" cy="20" r="3" fill="currentColor"/><path d="M24 6v4 M24 30v4 M10 20h4 M34 20h4"/>',
+  prph_seer:'<path d="M24 8l6 8-6 12-6-12z"/><path d="M18 16h12"/>',
+  prph_templar:'<path d="M24 7l11 4v8c0 7-5 11-11 13-6-2-11-6-11-13v-8z"/><path d="M24 12v12 M19 17h10"/>',
+  prph_disciple:'<path d="M24 8c4 0 7 4 7 10v8H17v-8c0-6 3-10 7-10z"/><path d="M24 16v6"/>',
+  prph_zealot:'<path d="M24 6l5 7-5 5-5-5z"/><path d="M16 22h16v6H16z"/>',
+  prph_spirit:'<path d="M16 14q8-8 16 0v12q-2-3-4 0t-4 0t-4 0t-4 0z"/><path d="M21 18h.01 M27 18h.01"/>',
+  prph_tarot:'<rect x="16" y="8" width="16" height="24" rx="2"/><path d="M24 13l2.5 5 5 .5-3.5 3 1 5-5-2.5-5 2.5 1-5-3.5-3 5-.5z" stroke-width="1.2"/>',
+  prph_vision:'<circle cx="24" cy="20" r="10"/><path d="M24 10v20 M14 20h20" opacity=".5"/><circle cx="24" cy="20" r="3" fill="currentColor"/>',
+  arc_cups:'<path d="M16 10h16l-1 8a7 7 0 01-14 0z M24 25v6 M19 31h10"/>',
+  arc_wands:'<path d="M16 32L32 12 M30 10l4 4-2 2-4-4z M16 30l-2 4 4-2z"/>',
+  arc_swords:'<path d="M30 8L16 26 M14 28l4-2 2 2-2 2z M28 6l6 0 0 6 M26 12l8-8"/>',
+  arc_pentacles:'<circle cx="24" cy="20" r="10"/><path d="M24 13l1.8 5.5H31l-4.5 3.3 1.7 5.4L24 23.9l-4.2 3.3 1.7-5.4L17 18.5h5.2z" stroke-width="1.1"/>',
+  arc_star:'<path d="M24 7l3.5 8.5L36 18l-8.5 2.5L24 29l-3.5-8.5L12 18l8.5-2.5z"/>',
+  arc_strength:'<path d="M24 8c-5 4-8 8-8 13a8 8 0 0016 0c0-5-3-9-8-13z"/>',
+  arc_tower:'<path d="M16 30V14h16v16 M14 14h20 M24 6v8 M21 20h6v10h-6z"/>',
+  arc_sun:'<circle cx="24" cy="20" r="7"/><path d="M24 6v4 M24 30v4 M10 20h4 M34 20h4 M14 10l3 3 M34 30l-3-3 M34 10l-3 3 M14 30l3-3"/>',
+  arc_death:'<path d="M24 8a9 9 0 00-9 9c0 4 2 6 4 8v4h10v-4c2-2 4-4 4-8a9 9 0 00-9-9z"/><circle cx="21" cy="17" r="1.6" fill="currentColor"/><circle cx="27" cy="17" r="1.6" fill="currentColor"/>',
+  arc_wheel:'<circle cx="24" cy="20" r="10"/><circle cx="24" cy="20" r="3"/><path d="M24 10v6 M24 24v6 M14 20h6 M28 20h6"/>',
+  arc_judgement:'<path d="M14 24l16-8 M14 24l2 6 M30 16l2 6 M22 20l-2-6 6 2"/><circle cx="32" cy="14" r="3"/>',
+  carn_shrink:'<rect x="9" y="13" width="15" height="9" rx="2"/><path d="M24 17h7 M29 13l5 4-5 4"/><circle cx="34" cy="17" r="2" fill="currentColor"/>',
+  carn_bigtop:'<path d="M8 26h32 M12 26V14l12-8 12 8v12 M24 6v20 M16 11v15 M32 11v15"/>',
+  carn_stage:'<path d="M14 10h20v8c0 6-5 10-10 10s-10-4-10-10z"/><path d="M19 15l3 2 M29 15l-3 2"/><path d="M21 24a4 3 0 016 0"/>',
+};
+function iconFor(id){const col=facCol(DB[id].f);
+  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ART[id]||ART.n_grunt}</svg>`;}
+
+/* ---------- menus / lobby ---------- */
+
+</script>
+<script>
+/* OVERCLOCK — menus.js  (menus + server-relay online lobby) */
+let ws=null,_rematchMode=false,_rmHost=null,_rmGuest=null;
+function ovl(){return $("overlay");}
+function facGrid(pickFn){return Object.keys(FACTIONS).map(f=>{const F=FACTIONS[f];
+    return `<div class="fac" style="border-color:var(${F.col})" onclick="${pickFn}('${f}')">
+      <h3 style="color:var(${F.col})">${F.name}</h3><div class="pool-rel">${F.rel}</div>
+      <p>${F.blurb}</p><div class="kw">▸ ${F.kw}</div></div>`;}).join("");}
+
+function showMenu(){
+  ONLINE=false;ROLE=null;MY="me";if(ws){try{ws.close();}catch(e){}ws=null;}conn=null;_rematchMode=false;_rmHost=null;_rmGuest=null;
+  ovl().innerHTML=`<h1>OVERCLOCK</h1><div class="sub">A shared-resource cyber card duel</div>
+    <div style="display:flex;gap:14px;margin-top:6px">
+      <button onclick="showSelect()">SOLO vs BOT</button>
+      <button onclick="showOnline()">PLAY A FRIEND</button></div>
+    <div style="display:flex;gap:10px;margin-top:2px"><button onclick="showStats()" style="opacity:.75;font-size:12px;letter-spacing:1px">STATISTICS</button><button onclick="showKeywords()" style="opacity:.75;font-size:12px;letter-spacing:1px">FIELD GUIDE</button><button onclick="showSettings()" style="opacity:.75;font-size:12px;letter-spacing:1px">SETTINGS</button></div>`;
+  ovl().classList.add("show");
+}
+/* solo */
+function showSelect(){
+  ONLINE=false;ROLE=null;MY="me";
+  ovl().innerHTML=`<h1>SOLO vs BOT</h1><div class="sub">Choose your faction — the bot picks one at random.</div>
+    <div class="facwrap">${facGrid("startWith")}</div>
+    <button onclick="showMenu()" style="opacity:.6;margin-top:4px">◂ back</button>`;
+  ovl().classList.add("show");
+}
+function startWith(fac){const others=Object.keys(FACTIONS).filter(f=>f!==fac);newGame(fac,others[Math.random()*others.length|0]);}
+
+/* ===== online via relay server ===== */
+function srvGet(){try{const v=localStorage.getItem("overclock_server");if(v)return v;}catch(e){}if(typeof location!=="undefined"&&/^https?:$/.test(location.protocol||""))return (location.protocol==="https:"?"wss://":"ws://")+location.host;return "";}
+function srvSet(u){try{localStorage.setItem("overclock_server",u);}catch(e){}}
+function wsSend(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));}
+function makeConn(){conn={open:true,send:obj=>wsSend({t:"relay",payload:obj})};}
+function failOnline(msg){try{ws&&ws.close();}catch(e){}ws=null;
+  ovl().innerHTML=`<h1 style="color:var(--red)">CONNECTION PROBLEM</h1><div class="sub" style="max-width:400px">${msg}</div>
+    <div style="display:flex;gap:10px;margin-top:6px"><button onclick="showOnline()">◂ back</button><button onclick="showMenu()">menu</button></div>`;
+  ovl().classList.add("show");}
+function wsConnect(onOpen,onMsg){
+  const url=srvGet();let opened=false;
+  try{ws=new WebSocket(url);}catch(e){failOnline("That server address looks invalid. It should start with wss://");return;}
+  const to=setTimeout(()=>{if(!opened)failOnline("Couldn't reach the server at <b>"+url+"</b> within 15s. Make sure it's deployed and running, and the address is exactly right (starts with wss://). Free hosts can take ~30s to wake up — try once more.");},15000);
+  ws.onopen=()=>{opened=true;clearTimeout(to);onOpen();};
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data);}catch(e){return;}onMsg(m);};
+  ws.onerror=()=>{if(!opened){clearTimeout(to);failOnline("Couldn't connect to the server. Double-check the address and that it's running.");}};
+  ws.onclose=()=>{if(opened&&ONLINE&&S&&!S.over&&!ovl().classList.contains("show"))toast("Lost connection to server");};
+}
+function showOnline(){
+  const auto=srvGet();
+  const body=auto
+    ? `<div class="sub" style="max-width:430px">One of you hosts and shares a room code; the other joins.</div><div class="sub" style="font-size:10px;opacity:.6">server: ${auto.replace(/^wss?:\/\//,"")}</div>`
+    : `<div class="sub" style="max-width:430px">Enter your game server address (one-time — see <b>server/README.md</b>).</div><input id="srvIn" class="lobbyin" style="width:340px" placeholder="wss://your-server.onrender.com">`;
+  ovl().innerHTML=`<h1>PLAY A FRIEND</h1>
+    ${body}
+    <div style="display:flex;gap:14px;margin-top:6px">
+      <button onclick="onlineGo('host')">HOST GAME</button>
+      <button onclick="onlineGo('join')">JOIN GAME</button></div>
+    <button onclick="showMenu()" style="opacity:.6;margin-top:4px">◂ back</button>`;
+  ovl().classList.add("show");
+}
+function onlineGo(role){
+  const inp=$("srvIn");
+  const u=(inp?(inp.value||""):srvGet()).trim();
+  if(!/^wss?:\/\/.+/.test(u)){toast("Enter your server address (wss://…)");return;}
+  srvSet(u);pickFac(role);
+}
+function pickFac(role){
+  ROLE=role;
+  ovl().innerHTML=`<h1>${role==="host"?"HOST":"JOIN"} — pick faction</h1>
+    <div class="sub">Your faction is locked in once the match starts.</div>
+    <div class="facwrap">${facGrid(role==="host"?"hostStart":"joinPick")}</div>
+    <button onclick="showOnline()" style="opacity:.6;margin-top:4px">◂ back</button>`;
+}
+function hostStart(fac){
+  ONLINE=true;ROLE="host";MY="me";myFac=fac;guestFac=null;
+  ovl().innerHTML=`<h1>HOSTING…</h1><div class="sub">Connecting to server…</div>`;
+  wsConnect(()=>wsSend({t:"create"}),m=>{
+    if(m.t==="created"){
+      ovl().innerHTML=`<h1>ROOM CODE</h1>
+        <div class="sub">Send this to your friend. Keep this window open — waiting for them to join…</div>
+        <div style="font-size:42px;letter-spacing:10px;color:var(--cyan);border:1px solid var(--cyan);border-radius:12px;padding:14px 28px;user-select:all">${m.code}</div>
+        <button onclick="showMenu()" style="opacity:.6">cancel</button>`;
+    } else if(m.t==="peer-joined"){
+      ovl().innerHTML=`<h1>OPPONENT FOUND</h1><div class="sub">Starting…</div>`;
+    } else if(m.t==="peer-left"){ if(S&&!S.over)toast("Friend disconnected"); }
+    else if(m.t==="error"){ failOnline(m.msg||"Server error."); }
+    else if(m.t==="msg"){ const p=m.payload;
+      if(p.t==="join"){ guestFac=p.fac; makeConn(); newGame(myFac,guestFac); }
+      else if(p.t==="act"){ handleRemote(p.act); }
+      else if(p.t==="rematch-fac"){ _rmGuest=p.fac; if(_rematchMode)maybeStartRematch(); else toast("Opponent wants a rematch — hit REMATCH"); }
+    }
+  });
+}
+function joinPick(fac){
+  ONLINE=true;ROLE="guest";MY="ai";myFac=fac;
+  ovl().innerHTML=`<h1>JOIN GAME</h1><div class="sub">Enter the host's room code:</div>
+    <input id="codeIn" class="lobbyin" style="width:220px;text-align:center;letter-spacing:6px;text-transform:uppercase" placeholder="CODE" maxlength="6" autocomplete="off">
+    <div style="display:flex;gap:10px;margin-top:4px"><button onclick="doJoin()">CONNECT</button><button onclick="showOnline()" style="opacity:.6">◂ back</button></div>`;
+  setTimeout(()=>{const i=$("codeIn");if(i)i.focus();},50);
+}
+function doJoin(){
+  const code=($("codeIn").value||"").trim().toUpperCase();if(!code)return;
+  ovl().innerHTML=`<h1>CONNECTING…</h1><div class="sub">Joining room ${code}…</div>`;
+  wsConnect(()=>wsSend({t:"join",code}),m=>{
+    if(m.t==="joined"){ makeConn(); wsSend({t:"relay",payload:{t:"join",fac:myFac}}); }
+    else if(m.t==="error"){ failOnline(m.msg||"Couldn't join that room. Check the code and that the host is waiting."); }
+    else if(m.t==="peer-left"){ if(S&&!S.over)toast("Host disconnected"); }
+    else if(m.t==="msg"){ const p=m.payload;
+      if(p.t==="state"){ _rematchMode=false;ONLINE=true;S=p.S;ovl().classList.remove("show"); if(S.over)showEnd(S[MY].core>0); render(); }
+      else if(p.t==="rematch-fac"){ if(!_rematchMode)toast("Opponent wants a rematch — hit REMATCH"); }
+    }
+  });
+}
+
+function showEnd(win){
+  S.over=true;
+  if(typeof sfx==="function")sfx(win?"win":"lose");
+  if(!S.recorded){S.recorded=true;try{recordMatch(win);}catch(e){}}
+  if(!S.gRecorded&&((ONLINE&&ROLE==="host")||!ONLINE)){S.gRecorded=true;try{recordGlobal(win?S[MY].fac:S[other(MY)].fac,win?S[other(MY)].fac:S[MY].fac,Math.ceil((S.tick||0)/2));}catch(e){}}
+  let recLine="";
+  try{const r=matchupRecord(S[MY].fac,S[other(MY)].fac);recLine=`<div class="sub">Your record vs ${FACTIONS[S[other(MY)].fac].name}: ${r.w}–${r.l}</div>`;}catch(e){}
+  ovl().innerHTML=`<h1 style="color:${win?'var(--cyan)':'var(--red)'}">${win?'VICTORY':'SYSTEM FAILURE'}</h1>
+    ${recLine}
+    <div style="display:flex;gap:12px;margin-top:4px">
+      <button onclick="${ONLINE?'rematchOnline()':'rematch()'}">REMATCH</button>
+      <button onclick="showStats()">STATISTICS</button>
+      <button onclick="showMenu()">MAIN MENU</button></div>`;
+  ovl().classList.add("show");
+}
+function rematch(){const a=(S&&S.me)?S.me.fac:null,b=(S&&S.ai)?S.ai.fac:null;if(a&&b)newGame(a,b);else showMenu();}
+function rematchOnline(){
+  if(!conn||!conn.open){toast("Connection lost");showMenu();return;}
+  _rematchMode=true;_rmHost=null;
+  ovl().innerHTML=`<h1>REMATCH \u2014 pick faction</h1><div class="sub">Both players pick again. (The other player must also hit REMATCH.)</div>
+    <div class="facwrap">${facGrid("rematchPick")}</div>
+    <button onclick="showMenu()" style="opacity:.6;margin-top:4px">\u25c2 leave</button>`;
+  ovl().classList.add("show");
+}
+function rematchPick(fac){
+  myFac=fac;if(ROLE==="host")_rmHost=fac;
+  try{conn.send({t:"rematch-fac",fac:fac});}catch(e){}
+  ovl().innerHTML=`<h1>READY</h1><div class="sub">You picked ${FACTIONS[fac].name}. Waiting for your opponent\u2026</div><button onclick="showMenu()" style="opacity:.6;margin-top:6px">\u25c2 leave</button>`;
+  ovl().classList.add("show");
+  if(ROLE==="host")maybeStartRematch();
+}
+function maybeStartRematch(){
+  if(ROLE==="host"&&_rematchMode&&_rmHost&&_rmGuest){const a=_rmHost,b=_rmGuest;_rematchMode=false;_rmHost=null;_rmGuest=null;newGame(a,b);}
+}
+
+</script>
+<script>
+/* OVERCLOCK — engine.js  (auto-split; loaded as a plain <script>, shares global scope) */
+function newGame(meFac,aiFac){
+  S={pool:0,turn:"me",tick:0,over:false,log:[],
+     me:{fac:meFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(meFac),hand:[],board:[]},
+     ai:{fac:aiFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(aiFac),hand:[],board:[]}};
+  for(let i=0;i<4;i++){draw("me");draw("ai");}draw("ai");
+  selectedUnit=null;pendingScript=null;busy=false;recentAct=null;if(typeof resetAnim==="function")resetAnim();
+  $("overlay").classList.remove("show");$("log").innerHTML="";
+  $("playerFac").textContent="YOU · "+FACTIONS[meFac].name;$("playerFac").style.color=facCol(meFac);
+  $("enemyFac").textContent="ENEMY · "+FACTIONS[aiFac].name;$("enemyFac").style.color=facCol(aiFac);
+  log("sys","// "+FACTIONS[meFac].name+" vs "+FACTIONS[aiFac].name);
+  startTurn("me");
+}
+const HAND_MAX=10;
+function draw(p){const pl=S[p];if(pl.deck.length===0){pl.core-=1;log("sys",(p==="me"?"You":"Enemy")+" decked out: -1 Core");return;}const c=pl.deck.pop();if(pl.hand.length>=HAND_MAX){log("sys",(p==="me"?"You":"Enemy")+" hand full ("+HAND_MAX+") — "+cardName(c)+" burned");return;}pl.hand.push(c);}
+
+/* ===================== HELPERS ===================== */
+function effCost(p,id){const d=DB[id];let base=d.cost;
+  if(d.costCompile)base=Math.max(d.costCompile.min,base-Math.floor((S[p].compile||0)/d.costCompile.per));
+  if(d.costScrap)base=Math.max(d.costScrap.min,base-Math.floor((S[p].scrap||0)/d.costScrap.per));
+  return Math.max(0,base+(S[p].tax||0));}
+function spendable(p){return S.pool+S[p].cap;}
+function canPlay(p,id){const cc=DB[id].capCost||0;if(S[p].cap<cc)return false;return (S.pool+(S[p].cap-cc))>=effCost(p,id);}
+function pay(p,id){const cc=DB[id].capCost||0;if(cc)S[p].cap-=cc;let amt=effCost(p,id);const fromPool=Math.min(S.pool,amt);S.pool-=fromPool;S[p].cap-=(amt-fromPool);}
+function bankTo(p,n){const mv=Math.min(n,S.pool);S.pool-=mv;S[p].cap+=mv;return mv;}
+function hurt(u,amt){if(u.armor>0){const a=Math.min(u.armor,amt);u.armor-=a;amt-=a;}u.hp-=amt;}
+function makeToken(p,id){if(S[p].board.length>=7)return;const u=mkUnit(id);u.token=true;u.ready=false;applyPerm(p,u);S[p].board.push(u);}
+function summon(p,id){if(S[p].board.length>=7)return;const u=mkUnit(id);u.ready=false;applyPerm(p,u);S[p].board.push(u);}
+function addCore(p,n){S[p].core+=n;if(n>0&&S[p].board.some(function(x){return x.rally&&x.hp>0;})){var t=S[p].board.filter(function(u){return u.type!=="permanent"&&u.hp>0;});if(t.length){var a=t[Math.floor(Math.random()*t.length)];a.atk+=2;log("sys","Rally: "+a.name+" +2 ATK");}}}
+function wiretap(p){var o=other(p);if(S[o].board.some(function(x){return x.bankEnemyPlay&&x.hp>0;})){S[o].cap+=1;log("sys","Wiretap: "+(o==="me"?"you":"enemy")+" bank 1⚡");}}
+function applyPerm(p,u){const b=S[p]&&S[p].permBuff;if(b&&(b.atk||b.hp)){u.atk+=b.atk;u.hp+=b.hp;u.maxHp+=b.hp;}}
+function transformDemon(u){u.atk=4;u.hp=4;u.maxHp=4;u.name="Demon";u.id="dem_demon";u.demon=true;const p=S.me.board.indexOf(u)>=0?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(p&&S[p].permBuff){u.atk+=S[p].permBuff.atk;u.hp+=S[p].permBuff.hp;u.maxHp+=S[p].permBuff.hp;}}
+function queueHorror(p){const size=Math.min(10,2+(S[p].summons||0));S[p].summons=(S[p].summons||0)+1;(S._pend=S._pend||[]).push({p:p,size:size});}
+function conductRitual(p,n){S[p].ritual=(S[p].ritual||0)+n;while(S[p].ritual>=3){S[p].ritual-=3;queueHorror(p);}log("sys",(p==="me"?"You":"Enemy")+" Ritual "+S[p].ritual+"/3");}
+function flushSummons(){if(!S._pend||!S._pend.length)return;const q=S._pend;S._pend=[];for(const it of q){if(S[it.p].board.length>=7)continue;const u=mkUnit("cult_spawn");u.atk=it.size;u.hp=it.size;u.maxHp=it.size;u.token=true;u.ready=false;applyPerm(it.p,u);S[it.p].board.push(u);log("sys",(it.p==="me"?"You":"Enemy")+" summons a "+it.size+"/"+it.size+" Horror");}}
+function addArcana(p,tier){if(tier==="minor"&&S[p].omenMajor){tier="major";S[p].omenMajor=false;log("sys","Omen fulfilled — a Major Arcana appears!");}const pool=tier==="major"?ARCANA_MAJOR:ARCANA_MINOR;const id=pool[Math.random()*pool.length|0];if(S[p].hand.length>=HAND_MAX){log("sys",(p==="me"?"You":"Enemy")+" hand full — Arcana lost");return;}S[p].hand.push(id);log("sys",(p==="me"?"You":"Enemy")+" draws "+cardName(id));}
+
+function swapStats(u){const a=u.atk;u.atk=u.hp;u.hp=a;if(u.hp>u.maxHp)u.maxHp=u.hp;}
+
+/* ===================== TURN FLOW ===================== */
+function genFor(){return Math.min(2+Math.floor(S.tick/2),9);}
+function startTurn(p){
+  S.turn=p;S.tick++;
+  S[p].tax=S[p].taxNext||0;S[p].taxNext=0;S[p].used={core:false,draw:false,bank:false};S[p].charge=Math.min(S[p].chargeMax||5,(S[p].charge||0)+1);
+  if(S[p].fac==="mech")S[p].scrap=(S[p].scrap||0)+1;
+  const gen=genFor();S.pool+=gen;
+  // start-of-turn triggers + overheat decay
+  S[p].board.forEach(u=>{
+    if(u.cd>0)u.cd--;
+    if(u.overheat)u.hp-=1;
+    if(u.start==="spawnDrone")makeToken(p,"swm_drone");
+    else if(u.start==="poolPlus2"){S.pool+=2;log("sys",u.name+" feeds +2⚡ to pool");}
+    else if(u.start==="gainCore2"){addCore(p,2);}
+    else if(u.start==="capPlus1"){S[p].cap+=1;log("sys",u.name+" +1⚡ to Capacitor");}
+    else if(u.start==="coreEng2"){addCore(p,2);log("sys",u.name+" +2 Core");}
+    else if(u.start==="launderEng"){const m=bankTo(p,2);log("sys",u.name+" banks "+m+"⚡");}
+    else if(u.start==="fusionEng"){S.pool+=2;S[p].compile=(S[p].compile||0)+1;log("sys",u.name+" +2⚡ pool, +1 Compile");}
+    else if(u.start==="scrapEng"){S[p].scrap=(S[p].scrap||0)+1;S[p].cap+=1;log("sys",u.name+" +1 Scrap, +1⚡");}
+  });
+  S[p].board.forEach(u=>{if(u.stunned){u.stunned=false;u.ready=false;}else u.ready=true;});
+  cleanup();
+  draw(p);
+  log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+" charge +"+gen+"⚡ (pool "+S.pool+")");
+  render();
+  if(ONLINE&&ROLE==="host")broadcast();
+  if(p==="ai"&&!S.over&&!ONLINE)setTimeout(aiTurn,600);
+}
+function passTurn(){startTurn(other(S.turn));}
+function endTurn(){if(S.turn!==MY||busy||S.over)return;clearSel();
+  if(ONLINE&&ROLE==="guest"){sendAct({a:"end"});render();return;}
+  passTurn();
+}
+/* ---------- networking apply ---------- */
+function broadcast(){if(ROLE==="host"&&conn&&conn.open)conn.send({t:"state",S:serialize()});}
+function sendAct(a){if(conn&&conn.open)conn.send({t:"act",act:a});}
+function act(a){if(ONLINE&&ROLE==="guest"){sendAct(a);render();}else doLocal(a);}
+function doLocal(a){if(S.over)return;applyAction(MY,a);afterAct();}
+function afterAct(){render();if(ONLINE&&ROLE==="host")broadcast();}
+function handleRemote(a){if(S.over)return;if(S.turn!==other(MY))return;applyAction(other(MY),a);afterAct();}
+function findUnit(uid){return S.me.board.find(u=>u.uid===uid)||S.ai.board.find(u=>u.uid===uid);}
+function resolveTarget(t){if(!t)return null;if(t.kind==="core")return {kind:"core",side:t.side};const u=findUnit(t.uid);return u?{kind:"unit",unit:u}:null;}
+function applyAction(seat,a){
+  if(a.a==="play"){const def=DB[S[seat].hand[a.idx]];if(!def)return;if(def.type==="program"||def.type==="permanent")playProgram(seat,a.idx);else playScript(seat,a.idx,null);}
+  else if(a.a==="script"){playScript(seat,a.idx,resolveTarget(a.target));}
+  else if(a.a==="attack"){const att=S[seat].board.find(u=>u.uid===a.attUid);if(att)attack(att,resolveTarget(a.target));}
+  else if(a.a==="end"){passTurn();}
+  else if(a.a==="power"){usePowerApply(seat,a.slot,resolveTarget(a.target));}
+  else if(a.a==="useLoc"){useLocApply(seat,a.uid);}
+  else if(a.a==="mull"){if(!S[seat].mulled){const nn=S[seat].hand.length;S[seat].deck=S[seat].deck.concat(S[seat].hand);S[seat].hand=[];for(let i=S[seat].deck.length-1;i>0;i--){const j=Math.random()*(i+1)|0,t=S[seat].deck[i];S[seat].deck[i]=S[seat].deck[j];S[seat].deck[j]=t;}S[seat].mulled=true;for(let k=0;k<nn;k++)draw(seat);log("sys",(seat==="me"?"You":"Enemy")+" took a mulligan");}}
+  else if(a.a==="concede"){S[seat].core=0;log("sys",(seat==="me"?"You":"Enemy")+" conceded");checkWin();}
+}
+function payN(p,amt){const fp=Math.min(S.pool,amt);S.pool-=fp;S[p].cap-=(amt-fp);}
+function useLocApply(seat,uid){
+  const u=S[seat].board.find(x=>x.uid===uid);if(!u||!u.loc||u.cd>0)return;
+  const cc=u.loc.capCost||0;
+  if(S[seat].cap<cc)return;
+  if((S.pool+(S[seat].cap-cc))<(u.loc.cost||0))return;
+  if(cc)S[seat].cap-=cc;
+  if(u.loc.cost)payN(seat,u.loc.cost);
+  u.cd=u.loc.cd;u.uses=(u.uses||0)-1;const opp=other(seat);
+  log(seat==="me"?"me":"ai",(seat==="me"?"You":"Enemy")+" activate "+u.name);
+  switch(u.loc.fx){
+    case "draw1":draw(seat);break;
+    case "coreDmg2":S[opp].core-=2;break;
+    case "coreDmg3":S[opp].core-=3;break;
+    case "swarmPlus":S[seat].board.forEach(x=>{if(x.type!=="permanent")x.atk+=1;});log("sys","your units +1 ATK");break;
+    case "scrapPlus2":S[seat].scrap=(S[seat].scrap||0)+2;log("sys","+2 Scrap");break;
+  }
+  if(u.uses<=0){u.hp=0;log("sys",u.name+" depleted");}
+  cleanup();
+}
+function powerDef(seat,slot){return slot==="bank"?BANKPOWER[S[seat].fac]:POWERS[S[seat].fac][slot];}
+function canUsePower(seat,slot){
+  if(S.over)return false;const pw=powerDef(seat,slot);
+  if(slot==="ult")return (S[seat].charge||0)>=(S[seat].chargeMax||5);
+  if(S[seat].used&&S[seat].used[slot])return false;
+  if(pw.fx==="bank"&&S.pool<=pw.cost)return false;
+  return spendable(seat)>=pw.cost;
+}
+function usePower(slot){
+  if(S.turn!==MY||busy||S.over)return;
+  if(!canUsePower(MY,slot)){toast(slot==="ult"?"Ultimate still charging":"Can't use that yet");return;}
+  clearSel();const pw=powerDef(MY,slot);
+  if(pw.target==="none"){act({a:"power",slot});return;}
+  pendingPower={slot,pw};render();toast("Choose a target");
+}
+function usePowerApply(seat,slot,target){
+  if(!canUsePower(seat,slot))return;
+  const pw=powerDef(seat,slot),opp=other(seat);
+  if(slot==="ult"){S[seat].charge=0;}else{payN(seat,pw.cost);S[seat].used[slot]=true;}
+  if(slot==="core")S[seat].charge=Math.min(S[seat].chargeMax||5,(S[seat].charge||0)+1);
+  log(seat==="me"?"me":"ai",(seat==="me"?"You":"Enemy")+(slot==="ult"?" ★ULTIMATE: ":(slot==="draw"?" power: ":slot==="bank"?" GENERATOR: ":" CORE POWER: "))+pw.name);
+  recentAct={t:"act",who:seat,text:pw.name};
+  if(typeof sfx==="function")sfx(slot==="ult"?"ult":"power");if(slot==="ult"&&typeof screenFlash==="function")screenFlash("rgba(255,255,255,.22)");
+  switch(pw.fx){
+    case "bank":bankTo(seat,pw.val||3);break;
+    case "steal":if(target&&target.unit){const ix=S[opp].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&S[seat].board.length<7){S[opp].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[seat].board.push(target.unit);log("sys",(seat==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
+    case "transform":if(target&&target.unit){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}break;
+    case "darkpact":draw(seat);S[seat].core-=1;break;
+    case "ult_ascend":S[seat].permBuff.atk+=2;S[seat].permBuff.hp+=2;S[seat].board.forEach(u=>{if(u.type!=="permanent"){u.atk+=2;u.hp+=2;u.maxHp+=2;}});log("sys","Ascendancy: your units +2/+2, forever");break;
+    case "ritual1":conductRitual(seat,1);break;
+    case "darkstudy":draw(seat);if(S[seat].board.some(u=>u.id==="cult_spawn"))draw(seat);break;
+    case "ult_doomsday":{let cnt=0;for(const q of ["me","ai"])S[q].board.forEach(u=>{if(u.type!=="permanent"){u.hp=0;cnt++;}});cleanup();conductRitual(seat,cnt);log("sys","DOOMSDAY — "+cnt+" destroyed, Ritual surges +"+cnt);break;}
+    case "minorRead":addArcana(seat,"minor");S.pool+=1;break;
+    case "foretell":draw(seat);S[seat].omenMajor=true;log("sys","Omen set — your next Arcana is a Major");break;
+    case "ult_revelation":addArcana(seat,"major");addArcana(seat,"major");break;
+    case "launder":bankTo(seat,2);break;
+    case "counterfeit":S[seat].cap+=2;log("sys",(seat==="me"?"You":"Enemy")+" counterfeits +2⚡");break;
+    case "spawn":makeToken(seat,"swm_drone");break;
+    case "spark":if(target&&target.kind==="unit")hurt(target.unit,1);else S[opp].core-=1;break;
+    case "patch":addCore(seat,3);break;
+    case "cloak":if(target&&target.unit)target.unit.stealth=true;break;
+    case "overclock":S.pool+=3;S[seat].compile=(S[seat].compile||0)+1;break;
+    case "audit":draw(seat);bankTo(seat,1);break;
+    case "recruit":draw(seat);if(S[seat].board.filter(u=>u.type!=="permanent").length>=3)draw(seat);break;
+    case "scavenge":draw(seat);S[seat].core-=1;break;
+    case "archive":draw(seat);addCore(seat,1);break;
+    case "datamine":draw(seat);if(S[seat].board.some(u=>u.stealth))draw(seat);break;
+    case "recompile":draw(seat);S[seat].compile=(S[seat].compile||0)+1;break;
+    case "ult_takeover":{const st=S[opp].cap;S[opp].cap=0;S[seat].cap+=st;draw(seat);draw(seat);log("sys","Seized "+st+"⚡ + drew 2");break;}
+    case "ult_swarm":for(let i=0;i<3;i++)makeToken(seat,"swm_drone");S[seat].board.forEach(u=>{if(u.type!=="permanent"){u.atk++;u.hp++;u.maxHp++;}});break;
+    case "ult_meltdown":S[opp].core-=4;S[opp].board.forEach(u=>hurt(u,2));break;
+    case "ult_lockdown":addCore(seat,8);S[seat].board.forEach(u=>{u.armor=(u.armor||0)+3;});break;
+    case "ult_breach":S[opp].core-=6;break;
+    case "ult_singularity":S[seat].cap+=8;draw(seat);draw(seat);S[seat].compile=(S[seat].compile||0)+3;break;
+    case "bloodpact":if(target&&target.unit){target.unit.hp=0;cleanup();}makeToken(seat,"ren_ghoul");break;
+    case "graverob":draw(seat);if((S[seat].grave||[]).length>0)draw(seat);break;
+    case "ult_crypt":for(let i=0;i<3;i++){const g=(S[seat].grave||[]).pop();if(g)summon(seat,g);else makeToken(seat,"ren_ghoul");}break;
+    case "fabricate":S[seat].scrap=(S[seat].scrap||0)+2;break;
+    case "salvage":draw(seat);if((S[seat].scrap||0)>=4)draw(seat);break;
+    case "ult_overdrive":{const m=S[seat].board.filter(x=>x.mech).sort((a,b)=>b.atk-a.atk)[0];if(m){m.atk+=4;m.hp+=4;m.maxHp+=4;m.armor=(m.armor||0)+3;}else summon(seat,"mech_colossus");break;}
+    case "swap":if(target&&target.unit)swapStats(target.unit);break;
+    case "sideshow":draw(seat);if(S[seat].board.some(u=>u.type!=="permanent"&&u.atk>u.hp))draw(seat);break;
+    case "ult_swapboards":{const tb=S[seat].board;S[seat].board=S[opp].board;S[opp].board=tb;S[seat].board.forEach(u=>u.ready=false);S[opp].board.forEach(u=>u.ready=false);log("sys","Hall of Mirrors — boards swapped!");break;}
+  }
+  spellFx={fx:pw.fx,who:seat,target:target};
+  cleanup();
+}
+function aiPickPower(){
+  const ai=S.ai,f=ai.fac;
+  if((ai.charge||0)>=(ai.chargeMax||5))return{power:true,slot:"ult"};
+  if(ai.used&&!ai.used.draw&&spendable("ai")>=POWERS[f].draw.cost&&ai.hand.length<=3)return{power:true,slot:"draw"};
+  if(ai.used&&!ai.used.core&&spendable("ai")>=POWERS[f].core.cost){
+    if(f==="bas"&&ai.core<16)return{power:true,slot:"core"};
+    if(f==="syn")return{power:true,slot:"core"};
+    if(f==="sng"&&S.pool<5)return{power:true,slot:"core"};
+    if(f==="swm"&&ai.board.filter(u=>u.type!=="permanent").length<6)return{power:true,slot:"core"};
+    if(f==="melt"){const t=S.me.board.filter(u=>u.type!=="permanent"&&!u.stealth&&u.hp+u.armor===1).sort((a,b)=>b.atk-a.atk)[0];if(t)return{power:true,slot:"core",target:{kind:"unit",unit:t}};if(S.me.core<=4)return{power:true,slot:"core",target:{kind:"core",side:"me"}};}
+    if(f==="zd"){const u=ai.board.find(x=>x.atk>=3&&!x.stealth&&x.type!=="permanent");if(u)return{power:true,slot:"core",target:{kind:"unit",unit:u}};}
+    if(f==="ren"){const sac=ai.board.find(u=>u.type!=="permanent"&&!u.token&&(u.death||u.hp<=1));if(sac)return{power:true,slot:"core",target:{kind:"unit",unit:sac}};}
+    if(f==="mech")return{power:true,slot:"core"};
+    if(f==="carn"){const t=S.me.board.filter(u=>u.type!=="permanent"&&!u.stealth).sort((a,b)=>b.atk-a.atk)[0];if(t&&t.atk>=3)return{power:true,slot:"core",target:{kind:"unit",unit:t}};}
+    if(f==="dem"){const t=ai.board.filter(u=>u.type!=="permanent"&&!u.demon&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{power:true,slot:"core",target:{kind:"unit",unit:t}};}
+    if(f==="cult")return{power:true,slot:"core"};
+    if(f==="prph")return{power:true,slot:"core"};
+  }
+  if(ai.used&&!ai.used.bank&&spendable("ai")>=BANKPOWER[f].cost){
+    if(f==="syn"){const t=S.me.board.filter(u=>u.type!=="permanent"&&!u.stealth&&u.atk>=4).sort((a,b)=>b.atk-a.atk)[0];if(t&&ai.board.length<7)return{power:true,slot:"bank",target:{kind:"unit",unit:t}};}
+    else if(S.pool>=4)return{power:true,slot:"bank"};
+  }
+  return null;
+}
+
+/* ===================== PLAY ===================== */
+function playProgram(p,handIdx){
+  const id=S[p].hand[handIdx];pay(p,id);S[p].hand.splice(handIdx,1);recentAct={t:"card",id:id,who:p};
+  const u=mkUnit(id);u.ready=!!u.overheat;applyPerm(p,u);S[p].board.push(u);
+  log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+(u.type==="permanent"?" build ":" deploy ")+u.name);
+  // deploy triggers
+  switch(u.deploy){
+    case "bank2":log("sys",(p==="me"?"You":"Enemy")+" bank "+bankTo(p,2)+"⚡");break;
+    case "replicate":makeToken(p,"swm_drone");break;
+    case "draw1":draw(p);break;
+    case "scaleCap":{const b=Math.floor(S[p].cap/2);u.atk+=b;if(b)log("sys",u.name+" +"+b+" ATK from hoard");break;}
+    case "scaleCompile":{const b=Math.floor((S[p].compile||0)/3);u.atk+=b;u.hp+=b;u.maxHp+=b;if(b)log("sys",u.name+" +"+b+"/+"+b+" from Compile");break;}
+    case "swarmLord":S[p].board.forEach(o=>{if(o!==u)o.atk+=1;});log("sys","Swarm +1 ATK");break;
+    case "bank3":log("sys","bank "+bankTo(p,3)+"⚡");break;
+    case "replicate2":makeToken(p,"swm_drone");makeToken(p,"swm_drone");break;
+    case "burnAll1":S[other(p)].board.forEach(o=>hurt(o,1));cleanup();log("sys",u.name+" scorches all enemies");break;
+    case "gainCore3":addCore(p,3);break;
+    case "assemble":{const m=S[p].board.filter(x=>x.mech&&x!==u).length;u.atk+=m;u.hp+=m;u.maxHp+=m;if(m)log("sys",u.name+" assembles +"+m+"/+"+m);break;}
+    case "scaleScrap":{const b=Math.floor((S[p].scrap||0)/2);u.atk+=b;u.hp+=b;u.maxHp+=b;if(b)log("sys",u.name+" +"+b+"/+"+b+" from Scrap");break;}
+    case "plated3":u.armor=(u.armor||0)+3;break;
+    case "flipAllies":S[p].board.forEach(o=>{if(o!==u&&o.type!=="permanent")swapStats(o);});log("sys",u.name+" flips the troupe");break;
+    case "knifeThrow":S[other(p)].core-=1;log("sys",u.name+" throws — 1 to enemy Core");break;
+    case "weakenStrong":{const t=S[other(p)].board.filter(x=>x.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(t){t.atk=Math.max(0,t.atk-2);log("sys",u.name+" cows "+t.name+" (-2 ATK)");}break;}
+    case "transformAlly":{const t=S[p].board.filter(x=>x.type!=="permanent"&&!x.demon&&x!==u).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t){transformDemon(t);log("sys",t.name+" is dragged into Demonhood (4/4)");}break;}
+    case "championAscend":transformDemon(u);S[p].permBuff.atk+=2;S[p].permBuff.hp+=2;S[p].board.forEach(o=>{if(o.type!=="permanent"){o.atk+=2;o.hp+=2;o.maxHp+=2;}});log("sys",u.name+" ascends and empowers the legion (+2/+2)");break;
+    case "ritual1":conductRitual(p,1);break;
+    case "ritual2":conductRitual(p,2);break;
+    case "minorRead":addArcana(p,"minor");break;
+    case "setomen":S[p].omenMajor=true;log("sys",(p==="me"?"You":"Enemy")+" sets an Omen — next Arcana is Major");break;
+  }
+  if(u.deploy)spellFx={fx:u.deploy,who:p,target:null};
+  wiretap(p);
+  cleanup();
+}
+function playScript(p,handIdx,target){
+  const id=S[p].hand[handIdx],def=DB[id];pay(p,id);S[p].hand.splice(handIdx,1);recentAct={t:"card",id:id,who:p};
+  S[p].compile=(S[p].compile||0)+1;
+  const opp=other(p);
+  log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+" run "+cardName(id));
+  switch(def.fx){
+    case "dmgAny":if(target.kind==="unit")hurt(target.unit,def.val);else S[target.side].core-=def.val;break;
+    case "burnUnit":{let v=def.val;if(S[p].board.some(u=>u.overheat))v=def.bonus;hurt(target.unit,v);break;}
+    case "coreBurn":S[opp].core-=def.val;S[p].core-=def.self||0;break;
+    case "coreDmg":S[opp].core-=def.val;break;
+    case "bank":log("sys",(p==="me"?"You":"Enemy")+" bank "+bankTo(p,def.val)+"⚡");break;
+    case "capPlus":S[p].cap+=def.val;break;
+    case "poolPlus":S.pool+=def.val;break;
+    case "extort":{const st=Math.min(2,S[opp].cap);if(st>0){S[opp].cap-=st;S[p].cap+=st;log("sys","Extort "+st+"⚡");}else{S[opp].core-=2;log("sys","No ⚡ — 2 to Core");}break;}
+    case "drawPerCap":{const n=Math.max(1,Math.floor(S[p].cap/3));for(let i=0;i<n;i++)draw(p);log("sys","Draw "+n);break;}
+    case "cantrip":for(let i=0;i<def.val;i++)draw(p);break;
+    case "tokens":for(let i=0;i<def.val;i++)makeToken(p,"swm_drone");break;
+    case "swarmBuff":if(S[p].board.length>=4){S[p].board.forEach(u=>{u.atk++;u.hp++;u.maxHp++;});log("sys","Swarm +1/+1");}else log("sys","Need 4+ units");break;
+    case "inject":target.unit.atk+=def.val;hurt(target.unit,def.self||2);break;
+    case "heal":target.unit.hp=target.unit.maxHp;target.unit.overheat=false;break;
+    case "fortify":target.unit.guard=true;target.unit.armor=(target.unit.armor||0)+def.val;break;
+    case "giveStealth":target.unit.stealth=true;break;
+    case "stun":if(target&&target.unit){target.unit.stunned=true;target.unit.ready=false;log("sys",target.unit.name+" is stunned");}break;
+    case "steal":if(target&&target.unit){const op=other(p);const ix=S[op].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&S[p].board.length<7){S[op].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[p].board.push(target.unit);log("sys",(p==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
+    case "tax":S[opp].taxNext=(S[opp].taxNext||0)+1;log("sys",(opp==="me"?"You":"Enemy")+" taxed +1⚡");break;
+    case "gainCore":addCore(p,def.val);break;
+    case "discard":{const h=S[opp].hand;if(h.length){const i=Math.random()*h.length|0;const d=h.splice(i,1)[0];log("sys",(opp==="me"?"You":"Enemy")+" discard "+cardName(d));}break;}
+    case "empEnemy":S[opp].board.forEach(u=>hurt(u,def.val));break;
+    case "sacrifice":if(target&&target.unit)target.unit.hp=0;draw(p);draw(p);break;
+    case "reanimate":{const g=(S[p].grave||[]).pop();if(g){summon(p,g);log("sys","Reanimated "+cardName(g));}else makeToken(p,"ren_ghoul");break;}
+    case "swapUnit":if(target&&target.unit){swapStats(target.unit);log("sys","Mirror: "+target.unit.name+" flipped");}break;
+    case "swapAll":S.me.board.concat(S.ai.board).forEach(swapStats);log("sys","Funhouse! every unit flipped");break;
+    case "buff":if(target&&target.unit){target.unit.atk+=def.val;target.unit.hp+=def.val;target.unit.maxHp+=def.val;log("sys",target.unit.name+" +"+def.val+"/+"+def.val);}break;
+    case "shrink":if(target&&target.unit){const x=target.unit;x.atk=1;x.hp=1;x.maxHp=1;x.armor=0;log("sys",x.name+" shrunk to 1/1");}break;
+    case "anthem":S[p].board.forEach(u=>{if(u.type!=="permanent"){u.atk++;u.hp++;u.maxHp++;}});log("sys","Big Top: your units +1/+1");break;
+    case "weaken":if(target&&target.unit){target.unit.atk=Math.max(0,target.unit.atk-def.val);log("sys",target.unit.name+" -"+def.val+" ATK");}break;
+    case "transform":if(target&&target.unit){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}break;
+    case "grant":if(target&&target.unit){const x=target.unit;if(def.kw==="guard")x.guard=true;else if(def.kw==="armor")x.armor=(x.armor||0)+(def.val||2);else if(def.kw==="overheat"){x.overheat=true;x.ready=true;}log("sys",x.name+" gains "+def.kw);}break;
+    case "ritual":conductRitual(p,def.val||1);break;
+    case "sacRitual":if(target&&target.unit){target.unit.hp=0;conductRitual(p,2);draw(p);log("sys","Offering accepted — Ritual +2");}break;
+    case "drawArc":addArcana(p,def.tier||"minor");break;
+    case "stealthBuff":{let c=0;S[p].board.forEach(function(u){if(u.stealth){u.atk+=(def.val||2);c++;}});log("sys","Shadow Blades: "+c+" stealthed unit(s) +"+(def.val||2)+" ATK");break;}
+    case "summonBody":{const u=mkUnit("prph_spirit");u.atk=def.val;u.hp=def.val;u.maxHp=def.val;u.token=true;u.ready=false;applyPerm(p,u);if(S[p].board.length<7)S[p].board.push(u);log("sys",(p==="me"?"You":"Enemy")+" summons a "+def.val+"/"+def.val+" Spirit");break;}
+  }
+  spellFx={fx:def.fx,who:p,target:target};
+  wiretap(p);
+  cleanup();
+}
+
+/* ===================== COMBAT ===================== */
+
+</script>
+<script>
+/* OVERCLOCK — combat.js  (auto-split; loaded as a plain <script>, shares global scope) */
+function guardsOf(p){return S[p].board.filter(u=>u.guard&&!u.stealth);}
+function attack(att,target){
+  const p=S.turn,opp=other(p);
+  if(!att.ready||att.atk<=0)return;
+  const guards=guardsOf(opp);
+  const bypass=att.stealth;
+  if(target.kind==="core"&&guards.length>0&&!bypass){toast("Must attack a GUARD first");return;}
+  if(target.kind==="unit"){
+    if(target.unit.stealth){toast("Can't target a STEALTH unit");return;}
+    if(!target.unit.guard&&guards.length>0&&!bypass){toast("Must attack a GUARD first");return;}
+  }
+  if(typeof markAttack==="function")markAttack(att.uid,(typeof DB!=="undefined"&&DB[att.id])?DB[att.id].f:"n",(target.kind==="unit"&&target.unit)?{kind:"unit",uid:target.unit.uid}:{kind:"core"});
+  att.ready=false;
+  recentAct={t:"act",who:p,text:att.name+(target.kind==="core"?" strikes the Core":" attacks")};
+  if(att.stealth)att.stealth=false;
+  if(att.leech){if(S.pool>0){S.pool--;S[p].cap++;log("sys",att.name+" leeches 1⚡");}else if(S[opp].cap>0){S[opp].cap--;S[p].cap++;log("sys",att.name+" steals 1⚡");}}
+  if(target.kind==="core"){S[opp].core-=att.atk;log(p==="me"?"me":"ai",att.name+" hits "+(opp==="me"?"your":"enemy")+" Core for "+att.atk);}
+  else{const d=target.unit;hurt(d,att.atk);hurt(att,d.atk);if(d.bankOnHit){S[opp].cap+=1;log("sys",d.name+" banks 1⚡");}log("sys",att.name+" ⚔ "+d.name);}
+  if(att.hp>0&&att.ascendOnAttack&&!att.demon){transformDemon(att);log("sys",att.name+" ascends to a Demon!");}
+  cleanup();render();
+}
+function cleanup(){
+  for(const p of["me","ai"]){
+    const keep=[];
+    for(const u of S[p].board){
+      if(u.hp<=0){
+        log("sys",u.name+" destroyed");const o=other(p);
+        if(u.death==="meltBurn3"){S[o].core-=3;log("sys",u.name+" detonates: 3 to "+(o==="me"?"your":"enemy")+" Core");}
+        else if(u.death==="martyrBurn"){S[o].core-=2;log("sys",u.name+": 2 to enemy Core");}
+        else if(u.death==="martyrDraw"){draw(p);}
+        else if(u.death==="martyrBank"){S[p].cap+=1;}
+        else if(u.death==="martyrSpawn"){makeToken(p,"ren_ghoul");}
+        else if(u.death==="cultRitual"){conductRitual(p,1);}
+        else if(u.death==="flipEnemy"){const tt=S[o].board.filter(x=>x.type!=="permanent"&&x.hp>0);if(tt.length){swapStats(tt[Math.random()*tt.length|0]);log("sys",u.name+" warps an enemy");}}
+        if(u.type!=="permanent"&&S[p].board.some(x=>x.harvest&&x.hp>0&&x!==u)){S[p].cap+=1;log("sys","Harvest: +1⚡ to Capacitor");}
+        if(u.type!=="permanent")S[p].board.forEach(x=>{if(x.vendetta&&x.hp>0&&x!==u)x.atk+=1;});
+        if(u.mech)S[p].scrap=(S[p].scrap||0)+1;
+        if(u.type!=="permanent"){const asc=S[p].board.find(x=>x.ascendOnDeath&&x.hp>0&&!x.demon&&x!==u);if(asc){transformDemon(asc);log("sys",asc.name+" ascends to a Demon!");}}
+        if(u.type!=="permanent"&&!u.token){S[p].grave=S[p].grave||[];S[p].grave.push(u.id);}
+      }
+      else keep.push(u);
+    }
+    S[p].board=keep;
+  }
+  if(typeof flushSummons==="function")flushSummons();
+  checkWin();
+}
+function checkWin(){if(S.over)return true;if(S.ai.core<=0){showEnd(true);return true;}if(S.me.core<=0){showEnd(false);return true;}return false;}
+
+/* ===================== AI ===================== */
+
+</script>
+<script>
+/* OVERCLOCK — ai.js  (auto-split; loaded as a plain <script>, shares global scope) */
+function aiTurn(){
+  if(S.over)return;busy=true;
+  let safety=0,cardPlays=0;
+  const step=()=>{
+    if(S.over){busy=false;return;}
+    const mv=aiPickPlay();
+    if(mv&&safety++<24&&!(typeof mv.i==="number"&&cardPlays>=5)){
+      if(typeof mv.i==="number")cardPlays++;
+      aiDoPlay(mv);render();setTimeout(step,720);
+    } else setTimeout(aiAttacks,560);
+  };
+  setTimeout(step,420);
+}
+function aiHasFx(fx){return S.ai.hand.find(id=>DB[id].fx===fx);}
+function aiIdx(id){return S.ai.hand.indexOf(id);}
+function myThreats(){return S.me.board.filter(u=>u.atk>0&&!u.stealth).sort((a,b)=>b.atk-a.atk);}
+function aiPickPlay(){
+  const ai=S.ai,bud=spendable("ai");
+  const pmv=aiPickPower();if(pmv)return pmv;
+  {const _l=ai.board.find(u=>u.type==="permanent"&&u.loc&&u.cd===0&&spendable("ai")>=(u.loc.cost||0));if(_l)return{loc:_l.uid};}
+  // removal on biggest threat
+  const th=myThreats();
+  if(th.length&&th[0].atk>=3){
+    const t=th[0];
+    const spike=aiIdx("n_spike");if(spike>=0&&canPlay("ai","n_spike")&&t.hp+t.armor<=3)return{i:spike,target:{kind:"unit",unit:t}};
+    const lance=aiIdx("melt_lance");if(lance>=0&&canPlay("ai","melt_lance")){const v=ai.board.some(u=>u.overheat)?3:2;if(t.hp+t.armor<=v)return{i:lance,target:{kind:"unit",unit:t}};}
+  }
+  const shk=aiIdx("carn_shrink");if(shk>=0&&canPlay("ai","carn_shrink")){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>=4).sort((a,b)=>b.atk-a.atk)[0];if(t)return{i:shk,target:{kind:"unit",unit:t}};}
+  const vir=aiIdx("zd_virus");if(vir>=0&&canPlay("ai","zd_virus")){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>=3&&!u.stunned).sort((a,b)=>b.atk-a.atk)[0];if(t)return{i:vir,target:{kind:"unit",unit:t}};}
+  const ex=aiIdx("zd_exploit");if(ex>=0&&canPlay("ai","zd_exploit")&&(S.me.core<=6||Math.random()<0.5))return{i:ex};
+  const ps=aiIdx("melt_spike");if(ps>=0&&canPlay("ai","melt_spike")&&S.me.core<=8)return{i:ps};
+  for(const fx of["poolPlus","tokens","tax","bank","capPlus","cantrip","drawPerCap","gainCore","discard"]){
+    const id=aiHasFx(fx);if(id&&canPlay("ai",id)){
+      if(fx==="bank"&&S.pool<3)continue;
+      if(fx==="poolPlus"||fx==="bank"||fx==="capPlus"){if(bud-effCost("ai",id)<1)continue;}
+      if(fx==="gainCore"&&S.ai.core>18)continue;
+      if(fx==="tokens"||fx==="swarmBuff"||fx==="poolPlus"||fx==="cantrip"||fx==="drawPerCap")return{i:aiIdx(id)};
+      if((fx==="tax"||fx==="discard")&&Math.random()<0.6)return{i:aiIdx(id)};
+      if((fx==="bank"||fx==="capPlus")&&S.pool>=4)return{i:aiIdx(id)};
+    }
+  }
+  const sb=aiIdx("zd_blades");if(sb>=0&&canPlay("ai","zd_blades")&&ai.board.filter(function(u){return u.stealth;}).length>=2)return{i:sb};
+  const poss=aiIdx("dem_possess");if(poss>=0&&canPlay("ai","dem_possess")){const t=ai.board.filter(u=>u.type!=="permanent"&&!u.demon&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:poss,target:{kind:"unit",unit:t}};}
+  for(const gid of ["dem_fury","dem_brand","dem_plate"]){const ix=aiIdx(gid);if(ix>=0&&canPlay("ai",gid)){const fu=ai.board.filter(x=>x.type!=="permanent"&&x.atk>0).sort((a,b)=>b.atk-a.atk)[0];if(fu)return{i:ix,target:{kind:"unit",unit:fu}};}}
+  const off=aiIdx("cult_offering");if(off>=0&&canPlay("ai","cult_offering")&&ai.board.filter(u=>u.type!=="permanent").length>1){const t=ai.board.filter(u=>u.type!=="permanent").sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:off,target:{kind:"unit",unit:t}};}
+  for(const rid of ["cult_rite","cult_chant"]){const ix=aiIdx(rid);if(ix>=0&&canPlay("ai",rid)&&S.pool>=1)return{i:ix};}
+  for(const aid of ["arc_death","arc_tower","arc_sun","arc_swords","arc_strength","arc_wheel","arc_star","arc_cups","arc_wands","arc_pentacles","arc_judgement","prph_vision","prph_tarot"]){const ix=aiIdx(aid);if(ix>=0&&canPlay("ai",aid)){const def=DB[aid];if(def.target==="enemyUnit"||def.target==="any"){const tt=myThreats()[0];if(tt)return{i:ix,target:{kind:"unit",unit:tt}};if(def.target==="any")return{i:ix,target:{kind:"core",side:"me"}};}else if(def.target==="friendly"){const fu=ai.board.filter(x=>x.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(fu)return{i:ix,target:{kind:"unit",unit:fu}};}else return{i:ix};}}
+  const ov=aiIdx("swm_overload");if(ov>=0&&canPlay("ai","swm_overload")&&ai.board.length>=4)return{i:ov};
+  const rf=aiIdx("bas_reinforce");if(rf>=0&&canPlay("ai","bas_reinforce")&&ai.board.length&&th.length){const g=ai.board.slice().sort((a,b)=>b.hp-a.hp)[0];return{i:rf,target:{kind:"unit",unit:g}};}
+  const inj=aiIdx("melt_inject");if(inj>=0&&canPlay("ai","melt_inject")){const u=ai.board.filter(x=>x.hp>2).sort((a,b)=>b.atk-a.atk)[0];if(u)return{i:inj,target:{kind:"unit",unit:u}};}
+  const _bN=ai.board.filter(u=>u.type!=="permanent").length;let best=-1,bc=-1;ai.hand.forEach((id,i)=>{const c=DB[id];if(((c.type==="permanent")||(c.type==="program"&&_bN<6))&&canPlay("ai",id)&&effCost("ai",id)>bc){best=i;bc=effCost("ai",id);}});
+  if(best>=0)return{i:best};
+  return null;
+}
+function aiDoPlay(mv){
+  if(mv.power){usePowerApply("ai",mv.slot,mv.target||null);checkWin();return;}
+  if(mv.loc){useLocApply("ai",mv.loc);checkWin();return;}
+  const id=S.ai.hand[mv.i],def=DB[id];
+  if(def.type==="program"){playProgram("ai",mv.i);return;}
+  let target=mv.target||null;
+  if(!target){
+    if(def.target==="enemyUnit"){const t=myThreats()[0];target=t?{kind:"unit",unit:t}:null;}
+    if(def.target==="friendly"){const u=S.ai.board.slice().sort((a,b)=>b.atk-a.atk)[0];target=u?{kind:"unit",unit:u}:null;}
+    if(def.target==="any"){const t=S.me.board.filter(u=>!u.stealth).sort((a,b)=>b.atk-a.atk)[0];target=t&&t.atk>=4?{kind:"unit",unit:t}:{kind:"core",side:"me"};}
+    if(def.target==="unit"){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];target=t?{kind:"unit",unit:t}:null;}
+  }
+  if((def.target==="enemyUnit"||def.target==="friendly"||def.target==="unit")&&!target)return;
+  playScript("ai",mv.i,target);
+  checkWin();
+}
+function aiAttacks(){
+  if(S.over){busy=false;return;}
+  const seq=()=>{
+    if(S.over){busy=false;return;}
+    const att=S.ai.board.find(u=>u.ready&&u.atk>0);
+    if(!att){busy=false;clearSel();if(!S.over)startTurn("me");return;}
+    const guards=guardsOf("me");const bypass=att.stealth;
+    let target;
+    if(guards.length&&!bypass)target={kind:"unit",unit:guards.slice().sort((a,b)=>(a.hp+a.armor)-(b.hp+b.armor))[0]};
+    else{
+      const targets=S.me.board.filter(u=>!u.stealth);
+      const th=targets.filter(u=>u.atk>=3).sort((a,b)=>b.atk-a.atk);
+      const kill=th.find(t=>att.atk>=t.hp+t.armor);
+      target=kill?{kind:"unit",unit:kill}:{kind:"core"};
+    }
+    if(typeof markAttack==="function")markAttack(att.uid,(DB[att.id]?DB[att.id].f:"n"),(target.kind==="unit"&&target.unit)?{kind:"unit",uid:target.unit.uid}:{kind:"core"});
+    att.ready=false;recentAct={t:"act",who:"ai",text:att.name+(target.kind==="core"?" strikes the Core":" attacks")};if(att.stealth)att.stealth=false;
+    if(att.leech){if(S.pool>0){S.pool--;S.ai.cap++;}else if(S.me.cap>0){S.me.cap--;S.ai.cap++;}}
+    if(target.kind==="core"){S.me.core-=att.atk;log("ai",att.name+" hits your Core for "+att.atk);}
+    else{const d=target.unit;hurt(d,att.atk);hurt(att,d.atk);if(d.bankOnHit){S.me.cap+=1;log("sys",d.name+" banks 1⚡");}log("sys",att.name+" ⚔ "+d.name);}
+    cleanup();render();
+    if(S.over){busy=false;return;}
+    setTimeout(seq,640);
+  };
+  seq();
+}
+
+/* ===================== INPUT ===================== */
+
+</script>
+<script>
+/* OVERCLOCK — ui.js  (input + rendering, cards, inspector, keyword guide) */
+function onHandClick(i){
+  if(S.turn!==MY||busy||S.over)return;
+  const id=S[MY].hand[i],def=DB[id];
+  if(!canPlay(MY,id)){toast("Not enough ⚡");return;}
+  clearSel();
+  if(def.type==="script"&&def.target&&def.target!=="none"){pendingScript={i,def};render();toast("Choose a target");return;}
+  act({a:"play",idx:i});
+}
+function onUnitClick(side,uid){
+  if(S.turn!==MY||busy||S.over)return;
+  const unit=S[side].board.find(u=>u.uid===uid);if(!unit)return;
+  const mine=side===MY,theirs=side===other(MY);
+  if(pendingPower){
+    const t=pendingPower.pw.target;
+    if((t==="friendly"&&mine)||(t==="any"&&!(theirs&&unit.stealth))||(t==="unit"&&!(theirs&&unit.stealth))||(t==="enemyUnit"&&theirs&&!unit.stealth)){act({a:"power",slot:pendingPower.slot,target:{kind:"unit",uid}});pendingPower=null;}else toast("Invalid target");
+    return;
+  }
+  if(pendingScript){
+    const t=pendingScript.def.target;
+    const ok=(t==="enemyUnit"&&theirs&&!unit.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&unit.stealth))||(t==="unit"&&!(theirs&&unit.stealth));
+    if(ok){act({a:"script",idx:pendingScript.i,target:{kind:"unit",uid}});pendingScript=null;}else toast("Invalid target");
+    return;
+  }
+  if(mine){
+    if(unit.stunned){toast("Stunned — can't act");return;}
+    if(unit.type==="permanent"&&unit.loc){const cc=unit.loc.capCost||0;
+      if(unit.cd>0)toast("On cooldown ("+unit.cd+")");
+      else if(S[MY].cap<cc)toast("Need "+cc+"⚡ banked");
+      else if((S.pool+(S[MY].cap-cc))<(unit.loc.cost||0))toast("Not enough ⚡");
+      else act({a:"useLoc",uid:unit.uid});return;}
+    if(unit.ready&&unit.atk>0){selectedUnit=selectedUnit===unit?null:unit;render();}else if(!unit.ready&&unit.atk>0)toast("Unit not ready");return;
+  }
+  if(theirs&&selectedUnit){act({a:"attack",attUid:selectedUnit.uid,target:{kind:"unit",uid}});selectedUnit=null;}
+}
+function onCoreClick(side){
+  if(S.turn!==MY||busy||S.over)return;
+  if(pendingPower){if(pendingPower.pw.target==="any"&&side===other(MY)){act({a:"power",slot:pendingPower.slot,target:{kind:"core",side}});pendingPower=null;}else toast("Invalid target");return;}
+  if(pendingScript){if(pendingScript.def.target==="any"){act({a:"script",idx:pendingScript.i,target:{kind:"core",side}});pendingScript=null;}else toast("Invalid target");return;}
+  if(side===other(MY)&&selectedUnit){act({a:"attack",attUid:selectedUnit.uid,target:{kind:"core",side}});selectedUnit=null;}
+}
+function clearSel(){selectedUnit=null;pendingScript=null;pendingPower=null;}
+function mulligan(){if(S.turn!==MY||busy||S.over)return;if(S[MY].mulled){toast("Already mulliganed");return;}act({a:"mull"});}
+function concede(){if(!S||S.over)return;if(S.turn!==MY){toast("Concede on your turn");return;}if(typeof confirm==="function"&&!confirm("Concede this match?"))return;act({a:"concede"});}
+function esc(s){return String(s==null?"":s).replace(/[&<>"\x27]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\x22":"&quot;","\x27":"&#39;"}[c];});}
+
+/* ===================== KEYWORDS / INSPECTOR ===================== */
+function kwOf(x){const def=DB[x.id]||x;const k=[];
+  if(x.guard)k.push("Guard");if(x.leech)k.push("Leech");if(x.overheat)k.push("Overheat");
+  if(x.stealth)k.push("Stealth");if(x.mech)k.push("Mech");
+  if(x.demon)k.push("Demon");else if(x.ascendOnAttack||x.ascendOnDeath)k.push("Ascend");
+  if(def.deploy==="assemble")k.push("Assemble");
+  if(typeof def.death==="string"&&def.death.indexOf("martyr")===0)k.push("Martyr");
+  if(def.capCost)k.push("Overload");
+  if(def.deploy==="flipAllies"||def.death==="flipEnemy")k.push("Invert");
+  return k;}
+function chips(x){return kwOf(x).map(n=>`<span class="chip">${n}</span>`).join("");}
+function inspectCard(id){const def=DB[id];if(!def)return;
+  const cap=def.capCost?` · Overload ⚡${def.capCost}`:"";
+  const _pb=permB(),_bz=(def.type==="program"&&(_pb.atk||_pb.hp));
+  const st=(def.type==="program")?` · ${def.atk+(_bz?_pb.atk:0)}/${def.hp+(_bz?_pb.hp:0)}`:(def.type==="permanent"?` · ${def.hp} HP`:"");
+  const names=kwOf(def);
+  const kwHtml=names.map(n=>`<div class="ikw"><b style="color:var(--cyan)">${n.toUpperCase()}</b> — ${(typeof KWMAP!=="undefined"&&KWMAP[n])||""}</div>`).join("");
+  const el=$("inspect");if(!el)return;
+  el.innerHTML=`<div class="iname" style="color:${facCol(def.f)}">${cardName(id)}</div>
+    <div class="imeta">${def.type.toUpperCase()} · ${def.cost}⚡${cap}${st}</div>
+    <div class="itxt">${demTxt(def.txt)}</div>${kwHtml?`<div class="ikws">${kwHtml}</div>`:""}`;
+  el.classList.add("show");
+}
+function hideInspect(){}
+function renderRecent(){var el=$("recent");if(!el)return;
+  var r=(typeof recentAct!=="undefined")?recentAct:null;
+  if(!r){el.innerHTML='<div class="rclbl">Last move</div><div class="rcempty">\u2014</div>';return;}
+  var who=(r.who===MY)?"You":(typeof ONLINE!=="undefined"&&ONLINE?"Friend":"Enemy");
+  if(r.t==="card"&&DB[r.id]){var def=DB[r.id];
+    el.innerHTML='<div class="rclbl">'+who+' played</div>'+
+      '<div class="rcard" style="border-color:'+facCol(def.f)+'"><div class="rca">'+iconFor(r.id)+'</div>'+
+      '<div><div class="rcname" style="color:'+facCol(def.f)+'">'+esc(cardName(r.id))+'</div><div class="rctxt">'+esc(demTxt(def.txt))+'</div></div></div>';
+  } else { el.innerHTML='<div class="rclbl">'+who+' \u2014 last move</div><div class="rcact">'+esc(r.text||"")+'</div>'; }
+}
+function showKeywords(){
+  const kw=(typeof KEYWORDS!=="undefined"?KEYWORDS:[]).map(o=>`<div class="gl"><span class="gln" style="color:var(--cyan)">${o.n}</span><span class="gld">${o.d}</span></div>`).join("");
+  const me=(typeof MECHANICS!=="undefined"?MECHANICS:[]).map(o=>`<div class="gl"><span class="gln" style="color:var(--gold)">${o.n}</span><span class="gld">${o.d}</span></div>`).join("");
+  ovl().innerHTML=`<h1>FIELD GUIDE</h1>
+    <div class="glwrap">
+      <div class="glcol"><div class="glh">Keywords</div>${kw}</div>
+      <div class="glcol"><div class="glh">Core mechanics</div>${me}</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button onclick="showDecks()">VIEW DECKS ▸</button>
+      <button onclick="closeGlossary()" style="opacity:.7">◂ BACK</button>
+    </div>`;
+  ovl().classList.add("show");
+}
+function closeGlossary(){if(S&&!S.over)ovl().classList.remove("show");else showMenu();}
+function deckCardHTML(id){
+  var d=DB[id];if(!d)return "";
+  var stat=d.type==="program"?(d.atk+"/"+d.hp):(d.type==="permanent"?("0/"+d.hp):"");
+  var col=FACTIONS[d.f]?FACTIONS[d.f].col:"--line";
+  var kws=[];try{kws=kwOf(Object.assign({id:id},d));}catch(e){}
+  var chips=kws.length?('<div class="pvkw">'+kws.map(function(k){return '<span class="pvchip">'+k+'</span>';}).join("")+'</div>'):"";
+  var cap=d.capCost?(" \u00b7 Overload "+d.capCost+"\u26a1"):"";
+  return '<div class="pvcard" style="border-color:var('+col+')">'+
+    '<div class="pvtop"><span class="pvcost">'+d.cost+'</span><span class="pvname" style="color:var('+col+')">'+esc(cardName(id))+'</span>'+(stat?('<span class="pvstat">'+stat+'</span>'):"")+'</div>'+
+    '<div class="pvart">'+iconFor(id)+'</div>'+
+    '<div class="pvtype">'+d.type+cap+'</div>'+chips+
+    '<div class="pvtxt">'+esc(d.txt||"")+'</div></div>';
+}
+function deckPreview(id){var el=$("deckPrev");if(el)el.innerHTML=deckCardHTML(id);}
+function showDecks(fac){
+  var facs=Object.keys(FACTIONS);if(!fac||!FACTIONS[fac])fac=facs[0];
+  var i=facs.indexOf(fac),prev=facs[(i-1+facs.length)%facs.length],next=facs[(i+1)%facs.length];
+  var deck=(typeof DECKS!=="undefined"&&DECKS[fac])||[];
+  var items=deck.map(function(e){return {id:e[0],n:e[1],def:DB[e[0]]};}).filter(function(x){return x.def;});
+  var total=items.reduce(function(s,x){return s+x.n;},0);
+  var order=[["program","Creatures"],["permanent","Permanents"],["script","Scripts"]];
+  var sect=order.map(function(o){
+    var arr=items.filter(function(x){return x.def.type===o[0];}).sort(function(a,b){return a.def.cost-b.def.cost;});
+    if(!arr.length)return "";
+    var rows=arr.map(function(x){
+      var stat=x.def.type==="program"?('<span class="dstat">'+x.def.atk+'/'+x.def.hp+'</span>'):(x.def.type==="permanent"?('<span class="dstat">0/'+x.def.hp+'</span>'):"");
+      return '<div class="drow" data-id="'+x.id+'" onmouseenter="deckPreview(this.dataset.id)" onclick="deckPreview(this.dataset.id)"><span class="dn">'+x.n+'\u00d7</span><span class="dcost">'+x.def.cost+'</span><span class="dname">'+esc(cardName(x.id))+'</span>'+stat+'</div>';
+    }).join("");
+    return '<div class="dsec"><div class="dsech">'+o[1]+'</div>'+rows+'</div>';
+  }).join("");
+  var tabs=facs.map(function(ff){return '<button class="dtab'+(ff===fac?' on':'')+'" data-f="'+ff+'" onclick="showDecks(this.dataset.f)" style="--tc:var('+FACTIONS[ff].col+')">'+FACTIONS[ff].name+'</button>';}).join("");
+  ovl().innerHTML='<h1 style="color:var('+FACTIONS[fac].col+')">'+FACTIONS[fac].name+'</h1>'+
+    '<div class="sub">'+FACTIONS[fac].rel+' \u00b7 '+total+' cards \u00b7 hover a card to preview</div>'+
+    '<div class="decktabs">'+tabs+'</div>'+
+    '<div class="deckmain"><div class="deckwrap">'+sect+'</div><div class="deckprev" id="deckPrev">'+(items[0]?deckCardHTML(items[0].id):"")+'</div></div>'+
+    '<button onclick="showKeywords()" style="margin-top:8px;opacity:.7">\u25c2 FIELD GUIDE</button>';
+  ovl().classList.add("show");
+}
+
+/* ===================== CARDS ===================== */
+function unitCard(side,u){
+  const def=DB[u.id];if(!def)return '<div class="card unit"></div>';const cls=["card","unit"];const mine=side===MY,theirs=side===other(MY);
+  const isPerm=u.type==="permanent";
+  if(isPerm){cls.push("perm");if(mine&&u.loc&&u.cd===0&&S.turn===MY)cls.push("actv");}
+  if(mine&&u.ready&&u.atk>0)cls.push("ready");
+  if(selectedUnit===u)cls.push("selected");
+  if(mine&&!u.ready&&!isPerm)cls.push("sick");
+  if(u.stealth)cls.push("stealth");
+  if(u.stunned)cls.push("stun");
+  if(pendingPower){const t=pendingPower.pw.target;
+    if((t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth))||(t==="enemyUnit"&&theirs&&!u.stealth))cls.push("target");}
+  else if(pendingScript){const t=pendingScript.def.target;
+    if((t==="enemyUnit"&&theirs&&!u.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth)))cls.push("target");}
+  else if(selectedUnit&&theirs&&!u.stealth)cls.push("target");
+  const arm=u.armor>0?`<div class="arm">🛡${u.armor}</div>`:"";
+  const status=isPerm?(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`):chips(u);
+  const foot=isPerm?`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${u.hp}</span>`:`<span class="atk">${u.atk}</span><span class="hp">${u.hp}</span>`;
+  return `<div class="${cls.join(' ')}" data-uid="${u.uid}" data-hp="${u.hp}" onclick="onUnitClick('${side}',${u.uid})" onmouseenter="inspectCard('${u.id}')" onmouseleave="hideInspect()">
+    <div class="fl" style="background:${facCol(def.f)}"></div>${arm}
+    <div class="name">${esc(u.name)}</div>
+    <div class="uart">${iconFor(u.id)}</div>
+    <div class="chips">${u.stunned?'<span class="chip stunchip">STUNNED</span>':''}${status}</div>
+    <div class="ctxt">${def.txt}</div>
+    <div class="ufoot">${foot}</div></div>`;
+}
+function permB(){return (typeof S!=="undefined"&&S&&S[MY]&&S[MY].permBuff)||{atk:0,hp:0};}
+function demTxt(txt){var b=permB();if(b.atk||b.hp)return txt.replace(/4\/4 Demon/g,(4+b.atk)+"/"+(4+b.hp)+" Demon");return txt;}
+function handCard(id,i){
+  if(!DB[id])return "";
+  const def=DB[id],ok=canPlay(MY,id),ec=effCost(MY,id);
+  const cls=["card","hand-card",def.type];if(ok)cls.push("playable");
+  const _pb=permB(),_bz=(def.type==="program"&&(_pb.atk||_pb.hp));
+  const _a=def.atk+(_bz?_pb.atk:0),_h=def.hp+(_bz?_pb.hp:0);
+  const stats=(def.type==="program")?`<div class="stats"><span class="atk"${_bz?' style="color:var(--green)"':''}>${_a}</span><span class="hp"${_bz?' style="color:var(--green)"':''}>${_h}</span></div>`
+    :(def.type==="permanent"?`<div class="stats"><span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${def.hp}</span></div>`:"");
+  const costCol=ec<def.cost?"var(--green)":ec>def.cost?"var(--red)":"";
+  const capb=def.capCost?`<div class="capbadge">⚡${def.capCost}</div>`:"";
+  const ch=chips(def);
+  return `<div class="${cls.join(' ')}" onclick="onHandClick(${i})" onmouseenter="inspectCard('${id}')" onmouseleave="hideInspect()">
+    <div class="fl" style="background:${facCol(def.f)}"></div>
+    <div class="cost" ${costCol?`style="background:${costCol}"`:""}>${ec}</div>${capb}
+    <div class="name">${cardName(id)}</div><div class="type">${def.type}</div>
+    <div class="hart">${iconFor(id)}</div>
+    ${ch?`<div class="chips">${ch}</div>`:""}
+    <div class="txt">${demTxt(def.txt)}</div>${stats}</div>`;
+}
+function resOf(p){const f=S[p].fac;if(f==="sng")return "◈ Compile "+(S[p].compile||0);if(f==="mech")return "⚙ Scrap "+(S[p].scrap||0);if(f==="cult")return "☥ Ritual "+(S[p].ritual||0)+"/3";if(f==="dem"&&S[p].permBuff&&S[p].permBuff.atk)return "▲ Aura +"+S[p].permBuff.atk+"/+"+S[p].permBuff.hp;if(f==="prph"&&S[p].omenMajor)return "✦ Omen: Major";return "";}
+function render(){
+  if(!S)return;
+  const V=MY,O=other(MY);
+  $("poolVal").textContent=S.pool;
+  $("playerCore").querySelector(".val").textContent=S[V].core;
+  $("enemyCore").querySelector(".val").textContent=S[O].core;
+  $("playerCap").textContent=S[V].cap;$("enemyCap").textContent=S[O].cap;
+  $("playerDeck").textContent=S[V].deck.length;$("enemyDeck").textContent=S[O].deck.length;$("enemyHandN").textContent=S[O].hand.length;
+  $("playerFac").textContent="YOU · "+FACTIONS[S[V].fac].name;$("playerFac").style.color=facCol(S[V].fac);
+  $("enemyFac").textContent="ENEMY · "+FACTIONS[S[O].fac].name;$("enemyFac").style.color=facCol(S[O].fac);
+  const pr=$("playerRes"),er=$("enemyRes");
+  if(pr){pr.textContent=resOf(V);pr.style.display=pr.textContent?"block":"none";}
+  if(er){er.textContent=resOf(O);er.style.display=er.textContent?"block":"none";}
+  const myTurn=S.turn===V;
+  $("turnTag").textContent=myTurn?"— your turn —":(ONLINE?"— friend's turn —":"— enemy turn —");
+  const tm=$("turnMeta");if(tm)tm.textContent="Turn "+Math.max(1,Math.ceil((S.tick||1)/2))+"  ·  next charge +"+genFor()+"⚡";
+  $("endBtn").disabled=(!myTurn||busy);
+  $("playerBoard").innerHTML=S[V].board.map(u=>unitCard(V,u)).join("");
+  $("enemyBoard").innerHTML=S[O].board.map(u=>unitCard(O,u)).join("");
+  const targCore=!!selectedUnit||(pendingScript&&pendingScript.def.target==="any")||(pendingPower&&pendingPower.pw&&pendingPower.pw.target==="any");
+  $("enemyCore").classList.toggle("target",!!targCore);$("enemyCore").onclick=()=>onCoreClick(O);
+  $("playerCore").classList.toggle("target",!!(pendingScript&&pendingScript.def.target==="any"));$("playerCore").onclick=()=>onCoreClick(V);
+  const F=S[V].fac;
+  const setPB=(id,slot)=>{const pw=(slot==="bank")?BANKPOWER[F]:POWERS[F][slot];const el=$(id);if(!el)return;
+    el.textContent=(slot==="ult"?("★ "+pw.name+" "+(S[V].charge||0)+"/"+(S[V].chargeMax||5)):((slot==="core"?"⚡ ":slot==="bank"?"⬢ ":"✚ ")+pw.name+" ("+pw.cost+")"));
+    el.className="powerbtn"+(slot==="ult"?" ult":"")+((pendingPower&&pendingPower.slot===slot)?" arming":"")+((slot==="ult"&&(S[V].charge||0)>=(S[V].chargeMax||5))?" charged":"");
+    el.disabled=!(myTurn&&!busy&&canUsePower(V,slot));el.title=pw.txt;};
+  setPB("pwCore","core");setPB("pwDraw","draw");setPB("pwBank","bank");setPB("pwUlt","ult");
+  $("enemyPower").textContent="★ "+POWERS[S[O].fac].ult.name+" "+(S[O].charge||0)+"/"+(S[O].chargeMax||5);
+  const _mb=$("mullBtn");if(_mb)_mb.style.display=(S.turn===V&&!S[V].mulled&&(S.tick||0)<=2&&!busy&&!S.over)?"block":"none";
+  const _cb=$("concedeBtn");if(_cb)_cb.style.display=S.over?"none":"block";
+  $("playerHand").innerHTML=S[V].hand.map((id,i)=>handCard(id,i)).join("");
+  const _hl=S[V].hand.length;if(_hl>_lastHand){if(ANIM_ON){const ch=$("playerHand").children;for(let i=_lastHand;i<_hl;i++){if(ch[i])ch[i].classList.add("aDraw");}}if(_sndReady)sfx("draw");}_lastHand=_hl;
+  const _pv=$("poolVal");if(ANIM_ON&&_lastPool!==null&&(+_pv.textContent)!==_lastPool){_pv.classList.remove("aPulse");void _pv.offsetWidth;_pv.classList.add("aPulse");}_lastPool=+_pv.textContent;
+  try{$("playerBoard").style.boxShadow="inset 0 -3px 0 "+facCol(S[V].fac);$("enemyBoard").style.boxShadow="inset 0 3px 0 "+facCol(S[O].fac);}catch(e){}
+  if(_lastTurn!==S.turn){_lastTurn=S.turn;if((S.tick||0)>0)showBanner(S.turn===V?"YOUR TURN":(ONLINE?"FRIEND'S TURN":"ENEMY TURN"),S.turn===V?"var(--cyan)":"var(--mag)");}
+  $("enemyHand").innerHTML=S[O].hand.map(()=>`<div class="card"></div>`).join("");
+  postAnim();
+  renderLog();
+  renderRecent();
+  {var _ins=$("inspect");if(_ins&&!_ins.innerHTML.trim()){_ins.innerHTML='<div class="imeta" style="margin:0">Hover a card to inspect it</div>';_ins.classList.add("show");}}
+}
+let toastT;function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1100);}
+function log(who,m){if(S){S.log=S.log||[];S.log.push({w:who,m:m});if(S.log.length>60)S.log.shift();}renderLog();}
+function renderLog(){const l=$("log");if(!l)return;l.innerHTML="";if(S&&S.log)S.log.forEach(e=>{const d=document.createElement("div");d.className="l "+e.w;d.textContent=e.m;l.appendChild(d);});l.scrollTop=l.scrollHeight;}
+
+/* ===================== ANIMATIONS (diff-based, post-render) ===================== */
+let _seen=new Set(),_snap={},_lastHand=0,_lastPool=null,_coreSnap={},_atk=null,_lastTurn=null,_sndReady=false,SOUND_ON=true,ANIM_ON=true;
+function resetAnim(){_seen=new Set();_snap={};_lastHand=0;_lastPool=null;_coreSnap={};_atk=null;_lastTurn=null;_sndReady=false;}
+function markAttack(uid,fac,target){_atk={uid:String(uid),fac:fac||"n",t:target||{kind:"core"}};}
+function floatNum(el,txt,kind){
+  const f=$("field");if(!f||!el)return;
+  const r=el.getBoundingClientRect(),fr=f.getBoundingClientRect();
+  const t=document.createElement("div");t.className="floatnum "+kind;t.textContent=txt;
+  t.style.left=(r.left-fr.left+r.width/2)+"px";t.style.top=(r.top-fr.top+6)+"px";
+  f.appendChild(t);setTimeout(function(){t.remove();},780);
+}
+function postAnim(){
+  try{
+    const cur=new Set(),ns={};
+    document.querySelectorAll("#playerBoard .card.unit,#enemyBoard .card.unit").forEach(function(el){
+      const uid=el.getAttribute("data-uid");if(uid==null)return;
+      const hp=parseInt(el.getAttribute("data-hp")||"0",10);cur.add(uid);ns[uid]=hp;
+      if(!_seen.has(uid)){if(ANIM_ON)el.classList.add("aEnter");if(_sndReady)sfx("play");}
+      else if(uid in _snap){const dh=hp-_snap[uid];
+        if(dh<0){if(ANIM_ON){el.classList.add("aHit");floatNum(el,String(dh),"dmg");}if(_sndReady)sfx("hit");}
+        else if(dh>0){if(ANIM_ON){el.classList.add("aBuff");floatNum(el,"+"+dh,"heal");}}}
+    });
+    if(_atk){if(_sndReady)sfx("attack");try{fxRunAttack(_atk);}catch(e){}_atk=null;}
+    if(typeof spellFx!=="undefined"&&spellFx){try{runSpellFx(spellFx);}catch(e){}spellFx=null;}
+    _snap=ns;_seen=cur;
+    ["playerCore","enemyCore"].forEach(function(id){
+      const el=$(id);if(!el)return;const vEl=el.querySelector(".val");if(!vEl)return;
+      const v=parseInt(vEl.textContent||"0",10);
+      if(_coreSnap[id]!=null&&v<_coreSnap[id]){if(ANIM_ON){el.classList.remove("aShake");void el.offsetWidth;el.classList.add("aShake");floatNum(el,String(v-_coreSnap[id]),"dmg");}}
+      _coreSnap[id]=v;
+    });
+    _sndReady=true;
+  }catch(e){}
+}
+let _ac=null;
+function _audio(){if(!_ac){try{_ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){_ac=null;}}if(_ac&&_ac.state==="suspended"){try{_ac.resume();}catch(e){}}return _ac;}
+function _blip(freq,dur,type,vol,slideTo){const c=_audio();if(!c)return;try{const o=c.createOscillator(),g=c.createGain();o.type=type||"sine";o.frequency.setValueAtTime(freq,c.currentTime);if(slideTo)o.frequency.exponentialRampToValueAtTime(Math.max(30,slideTo),c.currentTime+dur);g.gain.setValueAtTime(vol||0.06,c.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur);}catch(e){}}
+function sfx(name){
+  if(!SOUND_ON)return;
+  if(name==="play")_blip(420,0.12,"triangle",0.06,640);
+  else if(name==="draw")_blip(880,0.06,"sine",0.035,1150);
+  else if(name==="attack")_blip(220,0.09,"sawtooth",0.05,130);
+  else if(name==="hit")_blip(150,0.13,"square",0.06,70);
+  else if(name==="power")_blip(520,0.13,"triangle",0.06,780);
+  else if(name==="ult"){const n=[330,440,550,700];n.forEach(function(f,i){setTimeout(function(){_blip(f,0.2,"sawtooth",0.06,f*1.15);},i*70);});}
+  else if(name==="win"){const n=[523,659,784,1046];n.forEach(function(f,i){setTimeout(function(){_blip(f,0.22,"triangle",0.07);},i*120);});}
+  else if(name==="lose"){const n=[392,330,247];n.forEach(function(f,i){setTimeout(function(){_blip(f,0.28,"sine",0.06);},i*150);});}
+}
+function setSound(on){SOUND_ON=!!on;try{localStorage.setItem("oc_sound",on?"1":"0");}catch(e){}}
+function setAnim(on){ANIM_ON=!!on;try{localStorage.setItem("oc_anim",on?"1":"0");}catch(e){}}
+try{SOUND_ON=localStorage.getItem("oc_sound")!=="0";ANIM_ON=localStorage.getItem("oc_anim")!=="0";}catch(e){}
+function showBanner(text,color){try{const f=$("field");if(!f||!ANIM_ON)return;let b=$("turnBanner");if(!b){b=document.createElement("div");b.id="turnBanner";f.appendChild(b);}b.textContent=text;b.style.color=color||"var(--cyan)";b.classList.remove("show");void b.offsetWidth;b.classList.add("show");}catch(e){}}
+function screenFlash(color){try{const f=$("field");if(!f||!ANIM_ON)return;const dv=document.createElement("div");dv.className="screenflash";dv.style.background=color||"rgba(255,255,255,.22)";f.appendChild(dv);setTimeout(function(){dv.remove();},430);}catch(e){}}
+const ATK_STYLE={ren:"slash",carn:"slash",mech:"slash"};
+function _sfXY(el){var f=$("field");var fr=f.getBoundingClientRect(),b=el.getBoundingClientRect();return {x:b.left-fr.left+b.width/2,y:b.top-fr.top+b.height/2,f:f};}
+function sfBoom(el,color){if(!el)return;var o=_sfXY(el);var d=document.createElement("div");d.className="fxburst";d.style.left=o.x+"px";d.style.top=o.y+"px";d.style.color=color;o.f.appendChild(d);setTimeout(function(){d.remove();},380);}
+function sfBolt(el,color){if(!el)return;var o=_sfXY(el);var d=document.createElement("div");d.className="fxboltdown";d.style.left=o.x+"px";d.style.top=o.y+"px";d.style.color=color;o.f.appendChild(d);setTimeout(function(){d.remove();},340);}
+function sfRing(el,color){if(!el)return;var o=_sfXY(el);var d=document.createElement("div");d.className="fxring";d.style.left=o.x+"px";d.style.top=o.y+"px";d.style.color=color;o.f.appendChild(d);setTimeout(function(){d.remove();},480);}
+function sfGlow(el,color){if(!el)return;el.style.color=color;el.classList.remove("fxglowel");void el.offsetWidth;el.classList.add("fxglowel");setTimeout(function(){el.classList.remove("fxglowel");el.style.removeProperty("color");},540);}
+function sfCore(seat,color){var el=$(seat===MY?"playerCore":"enemyCore");if(!el)return;el.style.color=color;el.classList.remove("fxcorepulse");void el.offsetWidth;el.classList.add("fxcorepulse");setTimeout(function(){el.classList.remove("fxcorepulse");el.style.removeProperty("color");},540);}
+function sfCards(boardId,fn){var els=document.querySelectorAll("#"+boardId+" .card.unit");var i=0;els.forEach(function(el){fn(el,i++);});}
+function sfCardEl(uid){return document.querySelector('#playerBoard [data-uid="'+uid+'"], #enemyBoard [data-uid="'+uid+'"]');}
+function spellCat(fx){
+  if(["empEnemy","burnAll1","ult_meltdown"].indexOf(fx)>=0)return "aoeEnemy";
+  if(["dmgAny","burnUnit","coreBurn","coreDmg","ult_breach","spark","knifeThrow"].indexOf(fx)>=0)return "dmg";
+  if(["gainCore","patch","archive","scavenge","gainCore2","gainCore3","coreEng2","ult_lockdown"].indexOf(fx)>=0)return "heal";
+  if(["buff","anthem","swarmBuff","ult_swarm","ult_ascend","grant","fortify","inject","championAscend","swarmLord","stealthBuff"].indexOf(fx)>=0)return "buff";
+  if(fx==="stun")return "stun";
+  if(["transform","transformAlly"].indexOf(fx)>=0)return "transform";
+  if(fx==="ult_doomsday")return "doom";
+  if(["reanimate","ult_crypt","summonBody","spawn","replicate","replicate2"].indexOf(fx)>=0)return "summon";
+  return "cast";
+}
+function runSpellFx(sf){
+  if(!ANIM_ON||!sf||!sf.fx)return;
+  var cat=spellCat(sf.fx),who=sf.who,enemySeat=(who==="me"?"ai":"me");
+  var col=(typeof S!=="undefined"&&S&&S[who])?facCol(S[who].fac):"var(--cyan)";
+  var enemyBoardId=(enemySeat===MY?"playerBoard":"enemyBoard");
+  var ownBoardId=(who===MY?"playerBoard":"enemyBoard");
+  if(cat==="aoeEnemy"){screenFlash("rgba(255,110,60,.16)");sfCards(enemyBoardId,function(el,k){setTimeout(function(){sfBolt(el,col);sfBoom(el,col);},k*55);});if(_sndReady)sfx("hit");}
+  else if(cat==="dmg"){var el=sf.target&&sf.target.unit?sfCardEl(sf.target.unit.uid):null;if(el){sfBolt(el,col);sfBoom(el,col);}else sfCore(enemySeat,"rgba(255,84,104,.6)");}
+  else if(cat==="heal"){sfCore(who,"rgba(57,230,160,.6)");}
+  else if(cat==="buff"){sfCards(ownBoardId,function(el,k){setTimeout(function(){sfGlow(el,"#39e6a0");},k*40);});}
+  else if(cat==="stun"){var es=sf.target&&sf.target.unit?sfCardEl(sf.target.unit.uid):null;if(es)sfRing(es,"#27e1ff");}
+  else if(cat==="transform"){var et=sf.target&&sf.target.unit?sfCardEl(sf.target.unit.uid):null;if(et){sfBoom(et,col);sfGlow(et,col);}}
+  else if(cat==="doom"){screenFlash("rgba(155,81,224,.28)");sfCards(enemyBoardId,function(el,k){setTimeout(function(){sfBoom(el,"#9b51e0");},k*40);});sfCards(ownBoardId,function(el,k){setTimeout(function(){sfBoom(el,"#9b51e0");},k*40);});}
+  else if(cat==="summon"){sfCards(ownBoardId,function(el){if(el.classList.contains("aEnter"))sfRing(el,col);});}
+}
+function fxRunAttack(atk){
+  if(!ANIM_ON||!atk)return;
+  const aEl=document.querySelector('[data-uid="'+atk.uid+'"]');if(!aEl)return;
+  const bottom=!!aEl.closest("#playerBoard");
+  let tEl=null;
+  if(atk.t.kind==="core"){tEl=$(bottom?"enemyCore":"playerCore");}
+  else{tEl=document.querySelector("#"+(bottom?"enemyBoard":"playerBoard")+' [data-uid="'+atk.t.uid+'"]')||$(bottom?"enemyBoard":"playerBoard");}
+  if(!tEl)return;
+  attackFx(aEl,tEl,facCol(atk.fac),ATK_STYLE[atk.fac]||"beam");
+}
+function attackFx(fromEl,toEl,color,style){
+  const f=$("field");if(!f||!fromEl||!toEl)return;
+  const fr=f.getBoundingClientRect(),a=fromEl.getBoundingClientRect(),b=toEl.getBoundingClientRect();
+  const x1=a.left-fr.left+a.width/2,y1=a.top-fr.top+a.height/2,x2=b.left-fr.left+b.width/2,y2=b.top-fr.top+b.height/2;
+  if(style==="slash"){const s=document.createElement("div");s.className="fxslash";s.style.left=x2+"px";s.style.top=y2+"px";s.style.color=color;f.appendChild(s);setTimeout(function(){s.remove();},420);return;}
+  const p=document.createElement("div");p.className="fxbolt";p.style.background=color;p.style.boxShadow="0 0 12px "+color;p.style.left=x1+"px";p.style.top=y1+"px";
+  const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;p.style.transform="translate(-50%,-50%) rotate("+ang+"deg)";
+  f.appendChild(p);void p.offsetWidth;
+  p.style.transition="left .23s cubic-bezier(.45,.05,.55,.95),top .23s cubic-bezier(.45,.05,.55,.95)";p.style.left=x2+"px";p.style.top=y2+"px";
+  setTimeout(function(){p.remove();const bu=document.createElement("div");bu.className="fxburst";bu.style.left=x2+"px";bu.style.top=y2+"px";bu.style.color=color;f.appendChild(bu);setTimeout(function(){bu.remove();},380);},240);
+}
+</script>
+<script>
+/* OVERCLOCK — stats.js  (match history + win-rate statistics, persisted in localStorage) */
+const STATS_KEY="overclock_stats_v1";
+function loadStats(){try{return JSON.parse(localStorage.getItem(STATS_KEY))||[];}catch(e){return [];}}
+function saveStats(a){try{localStorage.setItem(STATS_KEY,JSON.stringify(a));}catch(e){}}
+/* called once per finished match; win = did the local player win */
+function recordMatch(win){
+  const e={ts:Date.now(),mode:(typeof ONLINE!=="undefined"&&ONLINE)?"online":"solo",
+    me:S[MY].fac,opp:S[other(MY)].fac,win:!!win,turns:Math.max(1,Math.ceil((S.tick||0)/2))};
+  const a=loadStats();a.push(e);if(a.length>500)a.shift();saveStats(a);return e;
+}
+function resetStats(){saveStats([]);showStats();}
+function pct(w,n){return n?Math.round(100*w/n):0;}
+function matchupRecord(meFac,oppFac){const a=loadStats().filter(e=>e.me===meFac&&e.opp===oppFac);const w=a.filter(e=>e.win).length;return {w,l:a.length-w,n:a.length};}
+function currentStreak(){const a=loadStats();let s=0,t=null;for(let i=a.length-1;i>=0;i--){if(t===null){t=a[i].win;s=1;}else if(a[i].win===t)s++;else break;}return {win:t,s};}
+
+function showStats(){
+  const a=loadStats();const n=a.length;const w=a.filter(e=>e.win).length;const l=n-w;
+  const win=loadStats();
+  let body;
+  if(n===0){
+    body=`<div class="sub" style="margin:20px 0">No matches recorded yet.<br>Play a game and your win rate will show up here.</div>`;
+  }else{
+    const st=currentStreak();
+    const streakTxt=st.s?(st.win?`🔥 ${st.s}-win streak`:`${st.s}-loss streak`).replace("🔥","▲ "):"—";
+    // per-faction (as you)
+    const fac={};Object.keys(FACTIONS).forEach(f=>fac[f]={n:0,w:0});
+    a.forEach(e=>{if(fac[e.me]){fac[e.me].n++;if(e.win)fac[e.me].w++;}});
+    const facRows=Object.keys(FACTIONS).filter(f=>fac[f].n>0)
+      .sort((x,y)=>pct(fac[y].w,fac[y].n)-pct(fac[x].w,fac[x].n))
+      .map(f=>{const o=fac[f];const p=pct(o.w,o.n);
+        return `<tr><td style="color:var(${FACTIONS[f].col})">${FACTIONS[f].name}</td>
+          <td>${o.w}–${o.n-o.w}</td>
+          <td><div class="bar"><div class="barfill" style="width:${p}%;background:var(${FACTIONS[f].col})"></div></div></td>
+          <td style="text-align:right">${p}%</td></tr>`;}).join("")||`<tr><td colspan="4" class="sub">—</td></tr>`;
+    // recent
+    const recent=a.slice(-10).reverse().map(e=>
+      `<div class="recent"><span style="color:${e.win?'var(--cyan)':'var(--red)'}">${e.win?'WIN ':'LOSS'}</span>
+        <span style="color:var(${FACTIONS[e.me].col})">${FACTIONS[e.me].name}</span>
+        vs <span style="color:var(${FACTIONS[e.opp].col})">${FACTIONS[e.opp].name}</span>
+        <span class="sub">· ${e.mode} · ${e.turns}t</span></div>`).join("");
+    const solo=a.filter(e=>e.mode==="solo"),onl=a.filter(e=>e.mode==="online");
+    body=`
+      <div class="bigrec">${w}<span class="sub">–</span>${l}
+        <span class="ratebig">${pct(w,n)}%</span></div>
+      <div class="sub" style="margin:-6px 0 10px">${n} games · ${streakTxt}
+        · solo ${pct(solo.filter(e=>e.win).length,solo.length)}%
+        ${onl.length?`· online ${pct(onl.filter(e=>e.win).length,onl.length)}%`:""}</div>
+      <table class="stbl"><thead><tr><th>Faction (you)</th><th>W–L</th><th>Win rate</th><th></th></tr></thead>
+        <tbody>${facRows}</tbody></table>
+      <div class="sub" style="margin:12px 0 4px">Recent</div>
+      <div class="recents">${recent}</div>`;
+  }
+  ovl().innerHTML=`<h1>STATISTICS</h1>
+    <div class="statwrap">${body}</div>
+    <div style="display:flex;gap:12px;margin-top:6px">
+      <button onclick="showMenu()">◂ MENU</button>
+      <button onclick="showGlobal()">GLOBAL ▸</button>
+      ${n?`<button onclick="if(confirm('Erase all match history?'))resetStats()" style="border-color:var(--red);color:var(--red)">RESET</button>`:""}
+    </div>`;
+  ovl().classList.add("show");
+}
+
+/* ---- global (shared) stats via the server ---- */
+function httpBase(){const u=(typeof srvGet==="function"?srvGet():"")||"";return u.replace(/^wss:/i,"https:").replace(/^ws:/i,"http:");}
+function recordGlobal(winFac,loseFac,turns){
+  if(typeof ONLINE==="undefined"||!ONLINE||ROLE!=="host")return;
+  const base=httpBase();if(!base)return;
+  try{fetch(base+"/stat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({winner:winFac,loser:loseFac,turns:turns||0})}).catch(function(){});}catch(e){}
+}
+function showGlobal(){
+  const base=httpBase();
+  ovl().innerHTML=`<h1>GLOBAL STATS</h1><div class="sub">Loading shared results…</div><button onclick="showStats()" style="margin-top:8px">◂ back</button>`;
+  ovl().classList.add("show");
+  if(!base){const sdiv=ovl().querySelector(".sub");if(sdiv)sdiv.textContent="Open the game from your server's URL to see global stats.";return;}
+  fetch(base+"/stats").then(r=>r.json()).then(renderGlobal).catch(function(){const sdiv=ovl().querySelector(".sub");if(sdiv)sdiv.textContent="Couldn't reach the server for global stats (is it deployed & is Upstash set up?).";});
+}
+function renderGlobal(d){
+  d=d||{};const ap=d.appear||{},wn=d.win||{},total=+d.total||0;
+  if(d.enabled===false){
+    ovl().innerHTML=`<h1>GLOBAL STATS</h1><div class="sub" style="max-width:420px">Global stats aren't switched on yet. Add a free Upstash datastore to your server (see <b>server/README.md</b>) and they'll start filling in here.</div><button onclick="showStats()" style="margin-top:8px">◂ back</button>`;
+    ovl().classList.add("show");return;
+  }
+  const rows=Object.keys(FACTIONS).filter(f=>ap[f]).sort((a,b)=>pct(+wn[b]||0,+ap[b]||0)-pct(+wn[a]||0,+ap[a]||0))
+    .map(f=>{const g=+ap[f]||0,w=+wn[f]||0,p=pct(w,g);
+      return `<tr><td style="color:var(${FACTIONS[f].col})">${FACTIONS[f].name}</td><td>${w}/${g}</td>
+        <td><div class="bar"><div class="barfill" style="width:${p}%;background:var(${FACTIONS[f].col})"></div></div></td>
+        <td style="text-align:right">${p}%</td></tr>`;}).join("")||`<tr><td colspan="4" class="sub">No online games recorded yet.</td></tr>`;
+  ovl().innerHTML=`<h1>GLOBAL STATS</h1>
+    <div class="sub">${total} online games across all players</div>
+    <div class="statwrap"><table class="stbl"><thead><tr><th>Faction</th><th>Win/Games</th><th>Win rate</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+    <button onclick="showStats()" style="margin-top:6px">◂ back</button>`;
+  ovl().classList.add("show");
+}
+function showSettings(){
+  const son=(typeof SOUND_ON==="undefined")?true:SOUND_ON, aon=(typeof ANIM_ON==="undefined")?true:ANIM_ON;
+  ovl().innerHTML=`<h1>SETTINGS</h1>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;min-width:200px">
+      <button onclick="setSound(!SOUND_ON);showSettings()">Sound: ${son?"ON":"OFF"}</button>
+      <button onclick="setAnim(!ANIM_ON);showSettings()">Animations: ${aon?"ON":"OFF"}</button>
+    </div>
+    <button onclick="showMenu()" style="margin-top:10px;opacity:.7">◂ back</button>`;
+  ovl().classList.add("show");
+}
+
+</script>
+<script>
+/* OVERCLOCK — main.js  (auto-split; loaded as a plain <script>, shares global scope) */
+$("endBtn").onclick=endTurn;$("pwCore").onclick=()=>usePower("core");$("pwDraw").onclick=()=>usePower("draw");$("pwUlt").onclick=()=>usePower("ult");$("pwBank").onclick=()=>usePower("bank");
+window.OC={S:()=>S,setS:v=>{S=v;},FACTIONS,DB,setMY:m=>{MY=m;},setOnline:(o,r)=>{ONLINE=o;ROLE=r;}};
+showMenu();
+
+</script>
+
+</body>
+</html>
