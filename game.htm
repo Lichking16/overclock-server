@@ -409,6 +409,8 @@ const DB={
 
   /* SWARM */
   swm_drone:{f:"swm",type:"program",cost:1,atk:1,hp:1,txt:"Drone token."},
+  swm_ddos:{f:"swm",type:"script",cost:2,fx:"dmgPerUnit",target:"none",txt:"DDoS: deal damage to the enemy Core equal to the number of units you control."},
+  swm_infest:{f:"swm",type:"script",cost:2,fx:"empEnemy",val:1,target:"none",txt:"Infestation: deal 1 to all enemy units."},
   swm_node:{f:"swm",type:"program",cost:2,atk:1,hp:3,start:"spawnDrone",txt:"Spawn Node. Start: make a 1/1 Drone."},
   swm_master:{f:"swm",type:"program",cost:3,atk:2,hp:2,deploy:"replicate",txt:"Botmaster. REPLICATE (also make a Drone)."},
   swm_lord:{f:"swm",type:"program",cost:4,atk:3,hp:3,deploy:"swarmLord",txt:"Swarm Logic. Deploy: your other units +1 ATK."},
@@ -432,6 +434,7 @@ const DB={
   bas_reinforce:{f:"bas",type:"script",cost:1,fx:"fortify",val:3,target:"friendly",txt:"Reinforce: a unit gains GUARD + Armor 3."},
   bas_patch:{f:"bas",type:"script",cost:1,fx:"gainCore",val:4,target:"none",txt:"Patch Cable: gain 4 Core."},
   bas_rally:{f:"bas",type:"permanent",cost:4,atk:0,hp:5,rally:true,txt:"Rally Conduit. Whenever you gain Core, an allied unit gets +2 ATK."},
+  bas_recruit:{f:"bas",type:"program",cost:0,atk:1,hp:1,coreOnAttack:true,txt:"Recruit. When it attacks, gain 1 Core."},
 
   /* ZERO-DAY */
   zd_root:{f:"zd",type:"program",cost:1,atk:2,hp:1,stealth:true,txt:"Rootkit. STEALTH."},
@@ -487,10 +490,19 @@ const DB={
   mech_frame:{f:"mech",type:"program",cost:2,atk:2,hp:2,mech:true,txt:"Drone Frame. MECH."},
   mech_walker:{f:"mech",type:"program",cost:3,atk:3,hp:3,mech:true,deploy:"assemble",txt:"Battle Walker. MECH. Deploy: +1/+1 per other Mech."},
   mech_tank:{f:"mech",type:"program",cost:4,atk:3,hp:5,mech:true,guard:true,txt:"Siege Tank. MECH. GUARD."},
-  mech_colossus:{f:"mech",type:"program",cost:6,atk:6,hp:6,mech:true,deploy:"scaleScrap",txt:"Iron Colossus. MECH. Deploy: +1/+1 per 2 Scrap."},
+  mech_colossus:{f:"mech",type:"program",cost:6,atk:0,hp:0,mech:true,txt:"Iron Colossus. MECH. A hollow titan, given form by Frameworks."},
   mech_titan:{f:"mech",type:"program",cost:8,atk:8,hp:8,mech:true,costScrap:{per:2,min:4},deploy:"plated3",txt:"War Titan. MECH. Costs 1 less per 2 Scrap (min 4). Deploy: Armor 3."},
   mech_reactor:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,start:"scrapEng",txt:"Reactor Core. Start: +1 Scrap and +1⚡ to Capacitor."},
   mech_forge:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,loc:{fx:"scrapPlus2",cd:1,uses:3},txt:"Assembly Forge. LOCATION · Activate: +2 Scrap. 3 uses."},
+  fw_assembly:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"assembly",loc:{fx:"fwScrapling",capCost:1,cd:1,uses:99},txt:"Assembly Frame. FRAMEWORK · Overload 1: make a Scrapling. Colossus: +2/+2 and 2 Scraplings."},
+  fw_laser:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"laser",loc:{fx:"fwLaser",capCost:1,cd:1,uses:99},txt:"Laser Cannon Frame. FRAMEWORK · Overload 1: 1 damage to an enemy. Colossus: Overheat and +2/+2."},
+  fw_giga:{f:"mech",type:"permanent",cost:0,atk:0,hp:4,mech:true,frame:"giga",loc:{fx:"fwGiga",capCost:1,cd:1,uses:99},txt:"Giga Guard Frame. FRAMEWORK · Overload 1: your Mechs +2 Armor. Colossus: Guard and +2/+2."},
+  fw_overload:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"overload",loc:{fx:"fwOverload",capCost:1,cd:1,uses:99},txt:"Overload Core Frame. FRAMEWORK · Overload 1: a Mech +1/+1. Colossus: +4/+4."},
+  mech_assembler:{f:"mech",type:"program",cost:3,atk:2,hp:3,mech:true,deploy:"buildAssembly",txt:"Assembler. MECH. Deploy: spend 2 Scrap to build an Assembly Frame."},
+  mech_gunner:{f:"mech",type:"program",cost:3,atk:3,hp:2,mech:true,deploy:"buildLaser",txt:"Gun Rig. MECH. Deploy: spend 2 Scrap to build a Laser Cannon Frame."},
+  mech_bulwark:{f:"mech",type:"program",cost:4,atk:2,hp:5,mech:true,guard:true,deploy:"buildGiga",txt:"Bulwark. MECH. GUARD. Deploy: spend 2 Scrap to build a Giga Guard Frame."},
+  mech_techie:{f:"mech",type:"program",cost:2,atk:2,hp:2,mech:true,death:"buildOverload",txt:"Field Techie. MECH. Death: spend 2 Scrap to build an Overload Core Frame."},
+  mech_blueprint:{f:"mech",type:"script",cost:1,fx:"buildFrame",target:"none",txt:"Blueprint: spend 2 Scrap to build a random Framework."},
 
   /* CARNEVAL */
   carn_acrobat:{f:"carn",type:"program",cost:2,atk:1,hp:4,txt:"Acrobat. Cheap body — flip it into a 4/1."},
@@ -509,11 +521,11 @@ const DB={
   dem_whelp:{f:"dem",type:"program",cost:1,atk:2,hp:1,ascendOnAttack:true,txt:"Hellwhelp. Ascend on attack \u2014 becomes a 4/4 Demon."},
   dem_cultling:{f:"dem",type:"program",cost:1,atk:1,hp:2,ascendOnDeath:true,txt:"Cultling. Ascends to a 4/4 Demon when a friendly unit dies."},
   dem_acolyte:{f:"dem",type:"program",cost:2,atk:2,hp:2,ascendOnDeath:true,txt:"Acolyte. Ascends to a 4/4 Demon when a friendly unit dies."},
-  dem_fiend:{f:"dem",type:"program",cost:3,atk:3,hp:3,deploy:"transformAlly",txt:"Fiend. Deploy: transform your smallest unit into a 4/4 Demon."},
+  dem_fiend:{f:"dem",type:"program",cost:3,atk:3,hp:3,deploy:"transformAlly",txt:"Fiend. Deploy: transform your smallest Devil into a 4/4 Demon."},
   dem_brander:{f:"dem",type:"program",cost:2,atk:2,hp:3,guard:true,txt:"Gatekeeper. Guard."},
   dem_overlord:{f:"dem",type:"program",cost:5,atk:5,hp:5,txt:"Overlord. A towering brute."},
   dem_champion:{f:"dem",type:"program",cost:6,atk:2,hp:2,deploy:"championAscend",txt:"Archfiend. Deploy: become a 4/4 Demon and cast Ascendancy free (all your units +2/+2)."},
-  dem_possess:{f:"dem",type:"script",cost:2,fx:"transform",target:"friendly",txt:"Possess: transform a friendly unit into a 4/4 Demon."},
+  dem_possess:{f:"dem",type:"script",cost:2,fx:"transform",target:"devil",txt:"Possess: transform one of your Devils into a 4/4 Demon."},
   dem_brand:{f:"dem",type:"script",cost:1,fx:"grant",kw:"guard",target:"friendly",txt:"Brand of Iron: give a friendly unit Guard."},
   dem_plate:{f:"dem",type:"script",cost:1,fx:"grant",kw:"armor",val:2,target:"friendly",txt:"Infernal Plate: give a friendly unit Armor 2."},
   dem_fury:{f:"dem",type:"script",cost:1,fx:"grant",kw:"overheat",target:"friendly",txt:"Demonic Fury: give a friendly unit Overheat (it can attack now)."},
@@ -558,13 +570,13 @@ const DB={
 
 const DECKS={
   syn:[["syn_broker",3],["syn_shark",3],["syn_enf",2],["syn_golem",2],["syn_boss",2],["syn_vault",2],["syn_wiretap",1],["syn_market",2],["syn_extort",2],["syn_insider",2],["syn_laundromat",1],["perm_server",1],["n_spike",2],["n_surge",1],["n_tesla",1]],
-  swm:[["swm_node",6],["swm_master",4],["swm_lord",3],["swm_queen",2],["swm_surge",2],["swm_overload",2],["swm_bay",1],["perm_capbank",1],["swm_drone",3],["n_bruiser",1],["n_surge",1],["n_tesla",1]],
+  swm:[["swm_node",6],["swm_master",4],["swm_lord",3],["swm_queen",2],["swm_surge",2],["swm_overload",2],["swm_bay",1],["perm_capbank",1],["swm_ddos",2],["swm_infest",2],["n_bruiser",1],["n_surge",1],["n_tesla",1]],
   melt:[["melt_imp",5],["melt_hound",4],["melt_core",2],["melt_drake",2],["melt_lance",3],["melt_spike",2],["melt_inject",2],["melt_reactor",1],["perm_capbank",1],["n_bruiser",2],["n_surge",1],["n_tesla",1]],
   bas:[["bas_wall",3],["bas_sentinel",3],["bas_turret",2],["bas_warden",2],["bas_main",1],["bas_rally",2],["bas_tariff",2],["bas_reinforce",2],["bas_patch",2],["bas_shield",1],["perm_server",1],["n_spike",2],["n_surge",1],["n_tesla",1]],
   zd:[["zd_root",3],["zd_spy",3],["zd_phantom",3],["zd_back",2],["zd_assassin",2],["zd_op",2],["zd_exploit",3],["zd_virus",2],["zd_blades",2],["zd_relay",1],["n_surge",1],["n_tesla",1]],
   sng:[["sng_plant",3],["sng_archive",3],["sng_net",3],["sng_arch",2],["sng_engine",1],["sng_sub",5],["sng_quantum",2],["sng_recur",2],["sng_fusion",1],["n_surge",1],["n_tesla",1]],
   ren:[["ren_thrall",4],["ren_zealot",4],["ren_butcher",4],["ren_revenant",2],["ren_warlord",2],["ren_grave",1],["ren_sacrifice",2],["ren_reanimate",3],["ren_plague",2],["n_surge",1],["n_tesla",1]],
-  mech:[["mech_scrapling",5],["mech_frame",4],["mech_walker",4],["mech_tank",3],["mech_colossus",2],["mech_titan",1],["mech_reactor",1],["mech_forge",1],["n_surge",1],["n_tesla",1]],
+  mech:[["mech_assembler",2],["mech_gunner",2],["mech_bulwark",2],["mech_techie",3],["mech_frame",3],["mech_walker",3],["mech_tank",2],["mech_titan",1],["mech_reactor",2],["mech_forge",2],["mech_blueprint",2]],
   carn:[["carn_acrobat",4],["carn_knife",4],["carn_mirror",2],["carn_strongman",2],["carn_clown",3],["carn_ringmaster",1],["carn_funhouse",1],["carn_show",3],["carn_shrink",2],["carn_bigtop",1],["carn_stage",2],["n_surge",1],["n_tesla",1]],
   dem:[["dem_imp",4],["dem_whelp",3],["dem_cultling",3],["dem_acolyte",3],["dem_fiend",2],["dem_brander",2],["dem_overlord",1],["dem_champion",1],["dem_possess",2],["dem_brand",2],["dem_plate",1],["dem_fury",2],["n_surge",1],["n_tesla",1]],
   cult:[["cult_acolyte",4],["cult_zealot",4],["cult_martyr",3],["cult_summoner",2],["cult_priest",2],["cult_brute",3],["cult_chant",2],["cult_rite",2],["cult_offering",2],["n_surge",1],["n_tesla",1]],
@@ -616,14 +628,14 @@ const POWERS={
   syn:{core:{name:"Counterfeit",cost:1,target:"none",fx:"counterfeit",txt:"Counterfeit Bills: generate 2⚡ straight into your Capacitor."},
        draw:{name:"Audit",cost:2,target:"none",fx:"audit",txt:"Draw a card and bank 1⚡."},
        ult:{name:"Hostile Takeover",cost:0,target:"none",fx:"ult_takeover",txt:"Steal ALL Watts from the enemy Capacitor and draw 2."}},
-  swm:{core:{name:"Spawn Drone",cost:2,target:"none",fx:"spawn",txt:"Create a 1/1 Drone."},
+  swm:{core:{name:"Spawn Drone",cost:1,target:"none",fx:"spawn",repeatable:true,txt:"Create a 1/1 Drone. Repeatable any number of times."},
        draw:{name:"Recruit",cost:2,target:"none",fx:"recruit",txt:"Draw a card; draw 2 if you have 3+ units."},
        ult:{name:"Swarm Protocol",cost:0,target:"none",fx:"ult_swarm",txt:"Make three 1/1 Drones and give all your units +1/+1."}},
   melt:{core:{name:"Spark",cost:2,target:"any",fx:"spark",txt:"Deal 1 to any unit or the enemy Core."},
        draw:{name:"Scavenge",cost:1,target:"none",fx:"scavenge",txt:"Draw a card, lose 1 Core."},
        ult:{name:"Meltdown",cost:0,target:"none",fx:"ult_meltdown",txt:"Deal 4 to the enemy Core and 2 to all enemy units."}},
-  bas:{core:{name:"Patch",cost:2,target:"none",fx:"patch",txt:"Gain 3 Core."},
-       draw:{name:"Archive",cost:2,target:"none",fx:"archive",txt:"Draw a card and gain 1 Core."},
+  bas:{core:{name:"Conscript",cost:1,target:"none",fx:"conscript",txt:"Make a 1/1 Recruit that gains you 1 Core whenever it attacks."},
+       draw:{name:"Mobilize",cost:2,target:"none",fx:"mobilize",txt:"Draw a card. If you gained Core this turn, draw 2 and give a friendly unit +1 ATK per Core gained this turn."},
        ult:{name:"Lockdown",cost:0,target:"none",fx:"ult_lockdown",txt:"Gain 8 Core; all your units gain Armor 3."}},
   zd:{core:{name:"Cloak",cost:1,target:"friendly",fx:"cloak",txt:"Give a friendly unit Stealth."},
        draw:{name:"Datamine",cost:2,target:"none",fx:"datamine",txt:"Draw a card; draw 2 if you control a Stealth unit."},
@@ -634,13 +646,13 @@ const POWERS={
   ren:{core:{name:"Blood Pact",cost:1,target:"friendly",fx:"bloodpact",txt:"Destroy a friendly unit to raise a 2/2 Ghoul."},
        draw:{name:"Grave Robbing",cost:2,target:"none",fx:"graverob",txt:"Draw a card; draw 2 if one of your units has died."},
        ult:{name:"Open the Crypt",cost:0,target:"none",fx:"ult_crypt",txt:"Summon up to 3 of your fallen creatures (or Ghouls)."}},
-  mech:{core:{name:"Fabricate",cost:2,target:"none",fx:"fabricate",txt:"+2 Scrap."},
+  mech:{core:{name:"Assemble",cost:1,target:"none",fx:"assembleScrapling",txt:"Summon a 1/1 Scrapling."},
        draw:{name:"Salvage",cost:2,target:"none",fx:"salvage",txt:"Draw a card; draw 2 if you have 4+ Scrap."},
-       ult:{name:"Overdrive Protocol",cost:0,target:"none",fx:"ult_overdrive",txt:"Your biggest Mech gets +4/+4 and Armor 3 (or summon an Iron Colossus)."}},
+       ult:{name:"Iron Colossus",cost:0,target:"none",fx:"ult_colossus",txt:"Summon the Iron Colossus: a 0/0 that gains +1/+1 per 2 Scrap, plus every Framework bonus you control."}},
   carn:{core:{name:"Swap",cost:1,target:"unit",fx:"swap",txt:"Swap a unit's ATK and HP."},
        draw:{name:"Sideshow",cost:2,target:"none",fx:"sideshow",txt:"Draw a card; draw 2 if you control a unit with more ATK than HP."},
        ult:{name:"Hall of Mirrors",cost:0,target:"none",fx:"ult_swapboards",txt:"Swap your entire board with the enemy's."}},
-  dem:{core:{name:"Possession",cost:2,target:"friendly",fx:"transform",txt:"Transform a friendly unit into a 4/4 Demon."},
+  dem:{core:{name:"Possession",cost:2,target:"devil",fx:"transform",txt:"Transform one of your Devils into a 4/4 Demon."},
        draw:{name:"Dark Pact",cost:1,target:"none",fx:"darkpact",txt:"Draw a card; lose 1 Core."},
        ult:{name:"Ascendancy",cost:0,target:"none",fx:"ult_ascend",txt:"Permanently give all your units — current and future — +2/+2."}},
   cult:{core:{name:"Conduct Ritual",cost:1,target:"none",fx:"ritual1",txt:"+1 Ritual. At 3 Ritual, summon a growing Horror (resets)."},
@@ -667,12 +679,13 @@ const BANKPOWER={
 };
 const facCol=f=>FACTIONS[f]?`var(${FACTIONS[f].col})`:"var(--line)";
 
+function isDevil(u){return !!(u&&u.type!=="permanent"&&!u.demon&&DB[u.id]&&DB[u.id].f==="dem");}
 function buildDeck(fac){
   const d=[];for(const[id,n]of DECKS[fac])for(let i=0;i<n;i++)d.push(id);
   for(let i=d.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]];}return d;
 }
 function mkUnit(id){const c=DB[id];return{uid:uidc++,id,name:c.name||cardName(id),atk:c.atk,hp:c.hp,maxHp:c.hp,
-  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,
+  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,coreOnAttack:!!c.coreOnAttack,frame:c.frame||null,
   start:c.start,death:c.death,deploy:c.deploy,type:c.type,loc:c.loc,cd:0,uses:c.loc?c.loc.uses:0,mech:!!c.mech,harvest:!!c.harvest,vendetta:!!c.vendetta,ready:false};}
 function cardName(id){return DB[id].txt.split(/[.:]/)[0];}
 
@@ -787,6 +800,18 @@ const ART={
   dem_overlord:'<path d="M12 14l-3-6 M36 14l3-6"/><path d="M24 8l4 6 7 2-5 6 1 8-7-4-7 4 1-8-5-6 7-2z"/>',
   dem_champion:'<path d="M24 5l5 7h-10z"/><path d="M14 13l-3-5 M34 13l3-5"/><path d="M24 13l8 6-3 9H19l-3-9z"/><path d="M21 21h.01 M27 21h.01"/>',
   dem_possess:'<circle cx="24" cy="18" r="6"/><path d="M24 24v8 M20 28h8"/><path d="M19 14l3 3 M29 14l-3 3"/>',
+  bas_recruit:'<path d="M24 9l9 4v6c0 6-4 9-9 11-5-2-9-5-9-11v-6z"/><path d="M24 14v8 M20 18h8"/>',
+  swm_ddos:'<circle cx="14" cy="16" r="3"/><circle cx="24" cy="11" r="3"/><circle cx="34" cy="16" r="3"/><circle cx="24" cy="24" r="3"/><path d="M14 16l10-5 10 5-10 8z"/>',
+  swm_infest:'<circle cx="16" cy="14" r="3"/><circle cx="30" cy="13" r="3"/><circle cx="22" cy="22" r="3"/><circle cx="32" cy="24" r="3"/><path d="M16 14l-3 6 M30 13l3 5 M22 22l-2 6"/>',
+  fw_assembly:'<rect x="13" y="13" width="22" height="14" rx="2"/><path d="M18 13v14 M30 13v14 M13 20h22"/>',
+  fw_laser:'<rect x="12" y="16" width="14" height="8" rx="2"/><path d="M26 20h12 M34 16l4 4-4 4"/>',
+  fw_giga:'<path d="M24 9l11 4v6c0 7-5 11-11 13-6-2-11-6-11-13v-6z"/><path d="M18 19h12 M24 13v12"/>',
+  fw_overload:'<circle cx="24" cy="20" r="9"/><path d="M25 12l-5 9h5l-1 7 6-9h-5z" fill="currentColor"/>',
+  mech_assembler:'<rect x="13" y="14" width="22" height="13" rx="2"/><path d="M19 14v13 M29 14v13"/><circle cx="24" cy="10" r="2"/>',
+  mech_gunner:'<rect x="13" y="17" width="12" height="9" rx="2"/><path d="M25 21h13 M30 13l2 4"/><circle cx="18" cy="21" r="2" fill="currentColor"/>',
+  mech_bulwark:'<path d="M24 8l12 4v7c0 7-5 12-12 14-7-2-12-7-12-14v-7z"/><path d="M24 14v12"/>',
+  mech_techie:'<circle cx="24" cy="15" r="5"/><path d="M16 30c0-5 4-8 8-8s8 3 8 8 M24 20v3"/>',
+  mech_blueprint:'<rect x="12" y="11" width="24" height="18" rx="2"/><path d="M12 17h24 M18 11v18 M22 21l3 3 5-6"/>',
   dem_brand:'<path d="M24 7v22 M16 15h16 M19 11l-3 4 3 4 M29 11l3 4-3 4"/>',
   dem_plate:'<path d="M24 7l12 4v8c0 7-6 11-12 13-6-2-12-6-12-13v-8z"/><path d="M24 13v12"/>',
   dem_fury:'<path d="M26 6l-10 14h7l-3 12 12-16h-7z" fill="currentColor"/>',
@@ -984,8 +1009,8 @@ function maybeStartRematch(){
 /* OVERCLOCK — engine.js  (auto-split; loaded as a plain <script>, shares global scope) */
 function newGame(meFac,aiFac){
   S={pool:0,turn:"me",tick:0,over:false,log:[],
-     me:{fac:meFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(meFac),hand:[],board:[]},
-     ai:{fac:aiFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(aiFac),hand:[],board:[]}};
+     me:{fac:meFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,coreGainedTurn:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(meFac),hand:[],board:[]},
+     ai:{fac:aiFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,coreGainedTurn:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(aiFac),hand:[],board:[]}};
   for(let i=0;i<4;i++){draw("me");draw("ai");}draw("ai");
   selectedUnit=null;pendingScript=null;busy=false;recentAct=null;if(typeof resetAnim==="function")resetAnim();
   $("overlay").classList.remove("show");$("log").innerHTML="";
@@ -1009,13 +1034,15 @@ function bankTo(p,n){const mv=Math.min(n,S.pool);S.pool-=mv;S[p].cap+=mv;return 
 function hurt(u,amt){if(u.armor>0){const a=Math.min(u.armor,amt);u.armor-=a;amt-=a;}u.hp-=amt;}
 function makeToken(p,id){if(S[p].board.length>=7)return;const u=mkUnit(id);u.token=true;u.ready=false;applyPerm(p,u);S[p].board.push(u);}
 function summon(p,id){if(S[p].board.length>=7)return;const u=mkUnit(id);u.ready=false;applyPerm(p,u);S[p].board.push(u);}
-function addCore(p,n){S[p].core+=n;if(n>0&&S[p].board.some(function(x){return x.rally&&x.hp>0;})){var t=S[p].board.filter(function(u){return u.type!=="permanent"&&u.hp>0;});if(t.length){var a=t[Math.floor(Math.random()*t.length)];a.atk+=2;log("sys","Rally: "+a.name+" +2 ATK");}}}
+function addCore(p,n){S[p].core+=n;if(n>0)S[p].coreGainedTurn=(S[p].coreGainedTurn||0)+n;if(n>0&&S[p].board.some(function(x){return x.rally&&x.hp>0;})){var t=S[p].board.filter(function(u){return u.type!=="permanent"&&u.hp>0;});if(t.length){var a=t[Math.floor(Math.random()*t.length)];a.atk+=2;log("sys","Rally: "+a.name+" +2 ATK");}}}
 function wiretap(p){var o=other(p);if(S[o].board.some(function(x){return x.bankEnemyPlay&&x.hp>0;})){S[o].cap+=1;log("sys","Wiretap: "+(o==="me"?"you":"enemy")+" bank 1⚡");}}
 function applyPerm(p,u){const b=S[p]&&S[p].permBuff;if(b&&(b.atk||b.hp)){u.atk+=b.atk;u.hp+=b.hp;u.maxHp+=b.hp;}}
 function transformDemon(u){u.atk=4;u.hp=4;u.maxHp=4;u.name="Demon";u.id="dem_demon";u.demon=true;const p=S.me.board.indexOf(u)>=0?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(p&&S[p].permBuff){u.atk+=S[p].permBuff.atk;u.hp+=S[p].permBuff.hp;u.maxHp+=S[p].permBuff.hp;}}
 function queueHorror(p){const size=Math.min(10,2+(S[p].summons||0));S[p].summons=(S[p].summons||0)+1;(S._pend=S._pend||[]).push({p:p,size:size});}
 function conductRitual(p,n){S[p].ritual=(S[p].ritual||0)+n;while(S[p].ritual>=3){S[p].ritual-=3;queueHorror(p);}log("sys",(p==="me"?"You":"Enemy")+" Ritual "+S[p].ritual+"/3");}
-function flushSummons(){if(!S._pend||!S._pend.length)return;const q=S._pend;S._pend=[];for(const it of q){if(S[it.p].board.length>=7)continue;const u=mkUnit("cult_spawn");u.atk=it.size;u.hp=it.size;u.maxHp=it.size;u.token=true;u.ready=false;applyPerm(it.p,u);S[it.p].board.push(u);log("sys",(it.p==="me"?"You":"Enemy")+" summons a "+it.size+"/"+it.size+" Horror");}}
+function queueToken(p,id){(S._pend=S._pend||[]).push({p:p,id:id});}
+function buildFramework(p,kind,deferred){if((S[p].scrap||0)<2){log("sys","Not enough Scrap for a Framework");return;}S[p].scrap-=2;if(deferred)queueToken(p,"fw_"+kind);else makeToken(p,"fw_"+kind);log("sys",(p==="me"?"You":"Enemy")+" build a "+kind+" Framework (-2 Scrap)");}
+function flushSummons(){if(!S._pend||!S._pend.length)return;const q=S._pend;S._pend=[];for(const it of q){if(S[it.p].board.length>=7)continue;if(it.id){makeToken(it.p,it.id);continue;}const u=mkUnit("cult_spawn");u.atk=it.size;u.hp=it.size;u.maxHp=it.size;u.token=true;u.ready=false;applyPerm(it.p,u);S[it.p].board.push(u);log("sys",(it.p==="me"?"You":"Enemy")+" summons a "+it.size+"/"+it.size+" Horror");}}
 function addArcana(p,tier){if(tier==="minor"&&S[p].omenMajor){tier="major";S[p].omenMajor=false;log("sys","Omen fulfilled — a Major Arcana appears!");}const pool=tier==="major"?ARCANA_MAJOR:ARCANA_MINOR;const id=pool[Math.random()*pool.length|0];if(S[p].hand.length>=HAND_MAX){log("sys",(p==="me"?"You":"Enemy")+" hand full — Arcana lost");return;}S[p].hand.push(id);log("sys",(p==="me"?"You":"Enemy")+" draws "+cardName(id));}
 
 function swapStats(u){const a=u.atk;u.atk=u.hp;u.hp=a;if(u.hp>u.maxHp)u.maxHp=u.hp;}
@@ -1024,7 +1051,7 @@ function swapStats(u){const a=u.atk;u.atk=u.hp;u.hp=a;if(u.hp>u.maxHp)u.maxHp=u.
 function genFor(){return Math.min(2+Math.floor(S.tick/2),9);}
 function startTurn(p){
   S.turn=p;S.tick++;
-  S[p].tax=S[p].taxNext||0;S[p].taxNext=0;S[p].used={core:false,draw:false,bank:false};S[p].charge=Math.min(S[p].chargeMax||5,(S[p].charge||0)+1);
+  S[p].tax=S[p].taxNext||0;S[p].taxNext=0;S[p].used={core:false,draw:false,bank:false};S[p].coreGainedTurn=0;S[p].charge=Math.min(S[p].chargeMax||5,(S[p].charge||0)+1);
   if(S[p].fac==="mech")S[p].scrap=(S[p].scrap||0)+1;
   const gen=genFor();S.pool+=gen;
   // start-of-turn triggers + overheat decay
@@ -1088,6 +1115,10 @@ function useLocApply(seat,uid){
     case "coreDmg3":S[opp].core-=3;break;
     case "swarmPlus":S[seat].board.forEach(x=>{if(x.type!=="permanent")x.atk+=1;});log("sys","your units +1 ATK");break;
     case "scrapPlus2":S[seat].scrap=(S[seat].scrap||0)+2;log("sys","+2 Scrap");break;
+    case "fwScrapling":makeToken(seat,"mech_scrapling");break;
+    case "fwLaser":{var lt=S[opp].board.filter(function(x){return x.type!=="permanent"&&!x.stealth&&x.hp>0;}).sort(function(a,b){return b.atk-a.atk;})[0];if(lt)hurt(lt,1);else S[opp].core-=1;break;}
+    case "fwGiga":S[seat].board.forEach(function(x){if(x.mech)x.armor=(x.armor||0)+2;});log("sys","Mechs +2 Armor");break;
+    case "fwOverload":{var ot=S[seat].board.filter(function(x){return x.mech&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(ot){ot.atk++;ot.hp++;ot.maxHp++;}break;}
   }
   if(u.uses<=0){u.hp=0;log("sys",u.name+" depleted");}
   cleanup();
@@ -1096,7 +1127,7 @@ function powerDef(seat,slot){return slot==="bank"?BANKPOWER[S[seat].fac]:POWERS[
 function canUsePower(seat,slot){
   if(S.over)return false;const pw=powerDef(seat,slot);
   if(slot==="ult")return (S[seat].charge||0)>=(S[seat].chargeMax||5);
-  if(S[seat].used&&S[seat].used[slot])return false;
+  if(!pw.repeatable&&S[seat].used&&S[seat].used[slot])return false;
   if(pw.fx==="bank"&&S.pool<=pw.cost)return false;
   return spendable(seat)>=pw.cost;
 }
@@ -1110,7 +1141,7 @@ function usePower(slot){
 function usePowerApply(seat,slot,target){
   if(!canUsePower(seat,slot))return;
   const pw=powerDef(seat,slot),opp=other(seat);
-  if(slot==="ult"){S[seat].charge=0;}else{payN(seat,pw.cost);S[seat].used[slot]=true;}
+  if(slot==="ult"){S[seat].charge=0;}else{payN(seat,pw.cost);if(!pw.repeatable)S[seat].used[slot]=true;}
   if(slot==="core")S[seat].charge=Math.min(S[seat].chargeMax||5,(S[seat].charge||0)+1);
   log(seat==="me"?"me":"ai",(seat==="me"?"You":"Enemy")+(slot==="ult"?" ★ULTIMATE: ":(slot==="draw"?" power: ":slot==="bank"?" GENERATOR: ":" CORE POWER: "))+pw.name);
   recentAct={t:"act",who:seat,text:pw.name};
@@ -1118,7 +1149,7 @@ function usePowerApply(seat,slot,target){
   switch(pw.fx){
     case "bank":bankTo(seat,pw.val||3);break;
     case "steal":if(target&&target.unit){const ix=S[opp].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&S[seat].board.length<7){S[opp].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[seat].board.push(target.unit);log("sys",(seat==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
-    case "transform":if(target&&target.unit){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}break;
+    case "transform":if(target&&target.unit){if(isDevil(target.unit)){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}else log("sys","Only Devils can be possessed");}break;
     case "darkpact":draw(seat);S[seat].core-=1;break;
     case "ult_ascend":S[seat].permBuff.atk+=2;S[seat].permBuff.hp+=2;S[seat].board.forEach(u=>{if(u.type!=="permanent"){u.atk+=2;u.hp+=2;u.maxHp+=2;}});log("sys","Ascendancy: your units +2/+2, forever");break;
     case "ritual1":conductRitual(seat,1);break;
@@ -1127,6 +1158,10 @@ function usePowerApply(seat,slot,target){
     case "minorRead":addArcana(seat,"minor");S.pool+=1;break;
     case "foretell":draw(seat);S[seat].omenMajor=true;log("sys","Omen set — your next Arcana is a Major");break;
     case "ult_revelation":addArcana(seat,"major");addArcana(seat,"major");break;
+    case "conscript":makeToken(seat,"bas_recruit");break;
+    case "mobilize":draw(seat);if((S[seat].coreGainedTurn||0)>0){draw(seat);var _g=S[seat].coreGainedTurn;var _t=S[seat].board.filter(function(u){return u.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(_t){_t.atk+=_g;log("sys",_t.name+" +"+_g+" ATK (mobilized)");}}break;
+    case "assembleScrapling":makeToken(seat,"mech_scrapling");break;
+    case "ult_colossus":{var u=mkUnit("mech_colossus");var sb=Math.floor((S[seat].scrap||0)/2);u.atk+=sb;u.hp+=sb;u.maxHp+=sb;var spawns=0;S[seat].board.forEach(function(fw){if(!fw.frame)return;if(fw.frame==="assembly"){u.atk+=2;u.hp+=2;u.maxHp+=2;spawns+=2;}else if(fw.frame==="laser"){u.overheat=true;u.ready=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="giga"){u.guard=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="overload"){u.atk+=4;u.hp+=4;u.maxHp+=4;}});applyPerm(seat,u);if(S[seat].board.length<7)S[seat].board.push(u);for(var si=0;si<spawns;si++)makeToken(seat,"mech_scrapling");log("sys",(seat==="me"?"You":"Enemy")+" forge the Iron Colossus ("+u.atk+"/"+u.hp+")");break;}
     case "launder":bankTo(seat,2);break;
     case "counterfeit":S[seat].cap+=2;log("sys",(seat==="me"?"You":"Enemy")+" counterfeits +2⚡");break;
     case "spawn":makeToken(seat,"swm_drone");break;
@@ -1173,7 +1208,7 @@ function aiPickPower(){
     if(f==="ren"){const sac=ai.board.find(u=>u.type!=="permanent"&&!u.token&&(u.death||u.hp<=1));if(sac)return{power:true,slot:"core",target:{kind:"unit",unit:sac}};}
     if(f==="mech")return{power:true,slot:"core"};
     if(f==="carn"){const t=S.me.board.filter(u=>u.type!=="permanent"&&!u.stealth).sort((a,b)=>b.atk-a.atk)[0];if(t&&t.atk>=3)return{power:true,slot:"core",target:{kind:"unit",unit:t}};}
-    if(f==="dem"){const t=ai.board.filter(u=>u.type!=="permanent"&&!u.demon&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{power:true,slot:"core",target:{kind:"unit",unit:t}};}
+    if(f==="dem"){const t=ai.board.filter(u=>isDevil(u)&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{power:true,slot:"core",target:{kind:"unit",unit:t}};}
     if(f==="cult")return{power:true,slot:"core"};
     if(f==="prph")return{power:true,slot:"core"};
   }
@@ -1207,12 +1242,15 @@ function playProgram(p,handIdx){
     case "flipAllies":S[p].board.forEach(o=>{if(o!==u&&o.type!=="permanent")swapStats(o);});log("sys",u.name+" flips the troupe");break;
     case "knifeThrow":S[other(p)].core-=1;log("sys",u.name+" throws — 1 to enemy Core");break;
     case "weakenStrong":{const t=S[other(p)].board.filter(x=>x.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(t){t.atk=Math.max(0,t.atk-2);log("sys",u.name+" cows "+t.name+" (-2 ATK)");}break;}
-    case "transformAlly":{const t=S[p].board.filter(x=>x.type!=="permanent"&&!x.demon&&x!==u).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t){transformDemon(t);log("sys",t.name+" is dragged into Demonhood (4/4)");}break;}
+    case "transformAlly":{const t=S[p].board.filter(x=>isDevil(x)&&x!==u).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t){transformDemon(t);log("sys",t.name+" is dragged into Demonhood (4/4)");}break;}
     case "championAscend":transformDemon(u);S[p].permBuff.atk+=2;S[p].permBuff.hp+=2;S[p].board.forEach(o=>{if(o.type!=="permanent"){o.atk+=2;o.hp+=2;o.maxHp+=2;}});log("sys",u.name+" ascends and empowers the legion (+2/+2)");break;
     case "ritual1":conductRitual(p,1);break;
     case "ritual2":conductRitual(p,2);break;
     case "minorRead":addArcana(p,"minor");break;
     case "setomen":S[p].omenMajor=true;log("sys",(p==="me"?"You":"Enemy")+" sets an Omen — next Arcana is Major");break;
+    case "buildAssembly":buildFramework(p,"assembly",false);break;
+    case "buildLaser":buildFramework(p,"laser",false);break;
+    case "buildGiga":buildFramework(p,"giga",false);break;
   }
   if(u.deploy)spellFx={fx:u.deploy,who:p,target:null};
   wiretap(p);
@@ -1254,11 +1292,13 @@ function playScript(p,handIdx,target){
     case "shrink":if(target&&target.unit){const x=target.unit;x.atk=1;x.hp=1;x.maxHp=1;x.armor=0;log("sys",x.name+" shrunk to 1/1");}break;
     case "anthem":S[p].board.forEach(u=>{if(u.type!=="permanent"){u.atk++;u.hp++;u.maxHp++;}});log("sys","Big Top: your units +1/+1");break;
     case "weaken":if(target&&target.unit){target.unit.atk=Math.max(0,target.unit.atk-def.val);log("sys",target.unit.name+" -"+def.val+" ATK");}break;
-    case "transform":if(target&&target.unit){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}break;
+    case "transform":if(target&&target.unit){if(isDevil(target.unit)){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}else log("sys","Only Devils can be possessed");}break;
     case "grant":if(target&&target.unit){const x=target.unit;if(def.kw==="guard")x.guard=true;else if(def.kw==="armor")x.armor=(x.armor||0)+(def.val||2);else if(def.kw==="overheat"){x.overheat=true;x.ready=true;}log("sys",x.name+" gains "+def.kw);}break;
     case "ritual":conductRitual(p,def.val||1);break;
     case "sacRitual":if(target&&target.unit){target.unit.hp=0;conductRitual(p,2);draw(p);log("sys","Offering accepted — Ritual +2");}break;
     case "drawArc":addArcana(p,def.tier||"minor");break;
+    case "dmgPerUnit":{var n=S[p].board.filter(function(x){return x.type!=="permanent";}).length;S[opp].core-=n;log("sys","DDoS: "+n+" to enemy Core");break;}
+    case "buildFrame":{var ks=["assembly","laser","giga","overload"];buildFramework(p,ks[Math.random()*ks.length|0],false);break;}
     case "stealthBuff":{let c=0;S[p].board.forEach(function(u){if(u.stealth){u.atk+=(def.val||2);c++;}});log("sys","Shadow Blades: "+c+" stealthed unit(s) +"+(def.val||2)+" ATK");break;}
     case "summonBody":{const u=mkUnit("prph_spirit");u.atk=def.val;u.hp=def.val;u.maxHp=def.val;u.token=true;u.ready=false;applyPerm(p,u);if(S[p].board.length<7)S[p].board.push(u);log("sys",(p==="me"?"You":"Enemy")+" summons a "+def.val+"/"+def.val+" Spirit");break;}
   }
@@ -1285,6 +1325,7 @@ function attack(att,target){
   }
   if(typeof markAttack==="function")markAttack(att.uid,(typeof DB!=="undefined"&&DB[att.id])?DB[att.id].f:"n",(target.kind==="unit"&&target.unit)?{kind:"unit",uid:target.unit.uid}:{kind:"core"});
   att.ready=false;
+  if(att.coreOnAttack)addCore(p,1);
   recentAct={t:"act",who:p,text:att.name+(target.kind==="core"?" strikes the Core":" attacks")};
   if(att.stealth)att.stealth=false;
   if(att.leech){if(S.pool>0){S.pool--;S[p].cap++;log("sys",att.name+" leeches 1⚡");}else if(S[opp].cap>0){S[opp].cap--;S[p].cap++;log("sys",att.name+" steals 1⚡");}}
@@ -1305,6 +1346,7 @@ function cleanup(){
         else if(u.death==="martyrBank"){S[p].cap+=1;}
         else if(u.death==="martyrSpawn"){makeToken(p,"ren_ghoul");}
         else if(u.death==="cultRitual"){conductRitual(p,1);}
+        else if(u.death==="buildOverload"){buildFramework(p,"overload",true);}
         else if(u.death==="flipEnemy"){const tt=S[o].board.filter(x=>x.type!=="permanent"&&x.hp>0);if(tt.length){swapStats(tt[Math.random()*tt.length|0]);log("sys",u.name+" warps an enemy");}}
         if(u.type!=="permanent"&&S[p].board.some(x=>x.harvest&&x.hp>0&&x!==u)){S[p].cap+=1;log("sys","Harvest: +1⚡ to Capacitor");}
         if(u.type!=="permanent")S[p].board.forEach(x=>{if(x.vendetta&&x.hp>0&&x!==u)x.atk+=1;});
@@ -1345,7 +1387,7 @@ function myThreats(){return S.me.board.filter(u=>u.atk>0&&!u.stealth).sort((a,b)
 function aiPickPlay(){
   const ai=S.ai,bud=spendable("ai");
   const pmv=aiPickPower();if(pmv)return pmv;
-  {const _l=ai.board.find(u=>u.type==="permanent"&&u.loc&&u.cd===0&&spendable("ai")>=(u.loc.cost||0));if(_l)return{loc:_l.uid};}
+  {const _l=ai.board.find(u=>u.type==="permanent"&&u.loc&&u.cd===0&&spendable("ai")>=(u.loc.cost||0)&&S.ai.cap>=(u.loc.capCost||0));if(_l)return{loc:_l.uid};}
   // removal on biggest threat
   const th=myThreats();
   if(th.length&&th[0].atk>=3){
@@ -1368,7 +1410,7 @@ function aiPickPlay(){
     }
   }
   const sb=aiIdx("zd_blades");if(sb>=0&&canPlay("ai","zd_blades")&&ai.board.filter(function(u){return u.stealth;}).length>=2)return{i:sb};
-  const poss=aiIdx("dem_possess");if(poss>=0&&canPlay("ai","dem_possess")){const t=ai.board.filter(u=>u.type!=="permanent"&&!u.demon&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:poss,target:{kind:"unit",unit:t}};}
+  const poss=aiIdx("dem_possess");if(poss>=0&&canPlay("ai","dem_possess")){const t=ai.board.filter(u=>isDevil(u)&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:poss,target:{kind:"unit",unit:t}};}
   for(const gid of ["dem_fury","dem_brand","dem_plate"]){const ix=aiIdx(gid);if(ix>=0&&canPlay("ai",gid)){const fu=ai.board.filter(x=>x.type!=="permanent"&&x.atk>0).sort((a,b)=>b.atk-a.atk)[0];if(fu)return{i:ix,target:{kind:"unit",unit:fu}};}}
   const off=aiIdx("cult_offering");if(off>=0&&canPlay("ai","cult_offering")&&ai.board.filter(u=>u.type!=="permanent").length>1){const t=ai.board.filter(u=>u.type!=="permanent").sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:off,target:{kind:"unit",unit:t}};}
   for(const rid of ["cult_rite","cult_chant"]){const ix=aiIdx(rid);if(ix>=0&&canPlay("ai",rid)&&S.pool>=1)return{i:ix};}
@@ -1391,8 +1433,9 @@ function aiDoPlay(mv){
     if(def.target==="friendly"){const u=S.ai.board.slice().sort((a,b)=>b.atk-a.atk)[0];target=u?{kind:"unit",unit:u}:null;}
     if(def.target==="any"){const t=S.me.board.filter(u=>!u.stealth).sort((a,b)=>b.atk-a.atk)[0];target=t&&t.atk>=4?{kind:"unit",unit:t}:{kind:"core",side:"me"};}
     if(def.target==="unit"){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];target=t?{kind:"unit",unit:t}:null;}
+    if(def.target==="devil"){const t=S.ai.board.filter(u=>isDevil(u)).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];target=t?{kind:"unit",unit:t}:null;}
   }
-  if((def.target==="enemyUnit"||def.target==="friendly"||def.target==="unit")&&!target)return;
+  if((def.target==="enemyUnit"||def.target==="friendly"||def.target==="unit"||def.target==="devil")&&!target)return;
   playScript("ai",mv.i,target);
   checkWin();
 }
@@ -1412,7 +1455,7 @@ function aiAttacks(){
       target=kill?{kind:"unit",unit:kill}:{kind:"core"};
     }
     if(typeof markAttack==="function")markAttack(att.uid,(DB[att.id]?DB[att.id].f:"n"),(target.kind==="unit"&&target.unit)?{kind:"unit",uid:target.unit.uid}:{kind:"core"});
-    att.ready=false;recentAct={t:"act",who:"ai",text:att.name+(target.kind==="core"?" strikes the Core":" attacks")};if(att.stealth)att.stealth=false;
+    att.ready=false;if(att.coreOnAttack)addCore("ai",1);recentAct={t:"act",who:"ai",text:att.name+(target.kind==="core"?" strikes the Core":" attacks")};if(att.stealth)att.stealth=false;
     if(att.leech){if(S.pool>0){S.pool--;S.ai.cap++;}else if(S.me.cap>0){S.me.cap--;S.ai.cap++;}}
     if(target.kind==="core"){S.me.core-=att.atk;log("ai",att.name+" hits your Core for "+att.atk);}
     else{const d=target.unit;hurt(d,att.atk);hurt(att,d.atk);if(d.bankOnHit){S.me.cap+=1;log("sys",d.name+" banks 1⚡");}log("sys",att.name+" ⚔ "+d.name);}
@@ -1442,12 +1485,12 @@ function onUnitClick(side,uid){
   const mine=side===MY,theirs=side===other(MY);
   if(pendingPower){
     const t=pendingPower.pw.target;
-    if((t==="friendly"&&mine)||(t==="any"&&!(theirs&&unit.stealth))||(t==="unit"&&!(theirs&&unit.stealth))||(t==="enemyUnit"&&theirs&&!unit.stealth)){act({a:"power",slot:pendingPower.slot,target:{kind:"unit",uid}});pendingPower=null;}else toast("Invalid target");
+    if((t==="friendly"&&mine)||(t==="any"&&!(theirs&&unit.stealth))||(t==="unit"&&!(theirs&&unit.stealth))||(t==="enemyUnit"&&theirs&&!unit.stealth)||(t==="devil"&&mine&&isDevil(unit))){act({a:"power",slot:pendingPower.slot,target:{kind:"unit",uid}});pendingPower=null;}else toast("Invalid target");
     return;
   }
   if(pendingScript){
     const t=pendingScript.def.target;
-    const ok=(t==="enemyUnit"&&theirs&&!unit.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&unit.stealth))||(t==="unit"&&!(theirs&&unit.stealth));
+    const ok=(t==="enemyUnit"&&theirs&&!unit.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&unit.stealth))||(t==="unit"&&!(theirs&&unit.stealth))||(t==="devil"&&mine&&isDevil(unit));
     if(ok){act({a:"script",idx:pendingScript.i,target:{kind:"unit",uid}});pendingScript=null;}else toast("Invalid target");
     return;
   }
@@ -1583,9 +1626,9 @@ function unitCard(side,u){
   if(u.stealth)cls.push("stealth");
   if(u.stunned)cls.push("stun");
   if(pendingPower){const t=pendingPower.pw.target;
-    if((t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth))||(t==="enemyUnit"&&theirs&&!u.stealth))cls.push("target");}
+    if((t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth))||(t==="enemyUnit"&&theirs&&!u.stealth)||(t==="devil"&&mine&&isDevil(u)))cls.push("target");}
   else if(pendingScript){const t=pendingScript.def.target;
-    if((t==="enemyUnit"&&theirs&&!u.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth)))cls.push("target");}
+    if((t==="enemyUnit"&&theirs&&!u.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth))||(t==="devil"&&mine&&isDevil(u)))cls.push("target");}
   else if(selectedUnit&&theirs&&!u.stealth)cls.push("target");
   const arm=u.armor>0?`<div class="arm">🛡${u.armor}</div>`:"";
   const status=isPerm?(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`):chips(u);
