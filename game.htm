@@ -302,6 +302,8 @@
 }
 /* snappy tapping on touch devices */
 .card,button,.powerbtn,.sidebtn,.fac,.dtab,.drow,.kwbtn,.stat{touch-action:manipulation}
+.cancelbtn{background:linear-gradient(180deg,#3d1320,#260c16);color:var(--red);border:1px solid var(--red);border-radius:9px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:11px;margin-top:6px}
+.cancelbtn:hover{box-shadow:0 0 14px rgba(255,84,104,.4)}
 
 </style>
 </head>
@@ -321,7 +323,7 @@
   <div class="center">
     <div class="turnbox"><div id="turnTag">— your turn —</div><div id="turnMeta" class="turnmeta"></div></div>
     <div class="pool"><div class="big" id="poolVal">0</div><div class="lbl">Shared Pool ⚡</div></div>
-    <div class="turnbox"><button id="endBtn">End Turn ▸</button></div>
+    <div class="turnbox"><button id="endBtn">End Turn ▸</button><button id="cancelBtn" class="cancelbtn" style="display:none">✕ Cancel</button></div>
   </div>
   <div class="row board" id="playerBoard"></div>
   <div class="row hand" id="playerHand"></div>
@@ -1467,6 +1469,7 @@ function onCoreClick(side){
   if(side===other(MY)&&selectedUnit){act({a:"attack",attUid:selectedUnit.uid,target:{kind:"core",side}});selectedUnit=null;}
 }
 function clearSel(){selectedUnit=null;pendingScript=null;pendingPower=null;}
+function cancelTarget(){if(!(pendingScript||pendingPower||selectedUnit))return;clearSel();render();if(typeof toast==="function")toast("Cancelled");}
 function mulligan(){if(S.turn!==MY||busy||S.over)return;if(S[MY].mulled){toast("Already mulliganed");return;}act({a:"mull"});}
 function concede(){if(!S||S.over)return;if(S.turn!==MY){toast("Concede on your turn");return;}if(typeof confirm==="function"&&!confirm("Concede this match?"))return;act({a:"concede"});}
 function esc(s){return String(s==null?"":s).replace(/[&<>"\x27]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\x22":"&quot;","\x27":"&#39;"}[c];});}
@@ -1634,6 +1637,7 @@ function render(){
   $("turnTag").textContent=myTurn?"— your turn —":(ONLINE?"— friend's turn —":"— enemy turn —");
   const tm=$("turnMeta");if(tm)tm.textContent="Turn "+Math.max(1,Math.ceil((S.tick||1)/2))+"  ·  next charge +"+genFor()+"⚡";
   $("endBtn").disabled=(!myTurn||busy);
+  {var _cb=$("cancelBtn");if(_cb)_cb.style.display=((pendingScript||pendingPower||selectedUnit)&&!busy)?"block":"none";}
   $("playerBoard").innerHTML=S[V].board.map(u=>unitCard(V,u)).join("");
   $("enemyBoard").innerHTML=S[O].board.map(u=>unitCard(O,u)).join("");
   const targCore=!!selectedUnit||(pendingScript&&pendingScript.def.target==="any")||(pendingPower&&pendingPower.pw&&pendingPower.pw.target==="any");
@@ -1881,7 +1885,7 @@ function showSettings(){
 </script>
 <script>
 /* OVERCLOCK — main.js  (auto-split; loaded as a plain <script>, shares global scope) */
-$("endBtn").onclick=endTurn;$("pwCore").onclick=()=>usePower("core");$("pwDraw").onclick=()=>usePower("draw");$("pwUlt").onclick=()=>usePower("ult");$("pwBank").onclick=()=>usePower("bank");
+$("endBtn").onclick=endTurn;$("pwCore").onclick=()=>usePower("core");$("pwDraw").onclick=()=>usePower("draw");$("pwUlt").onclick=()=>usePower("ult");$("pwBank").onclick=()=>usePower("bank");$("cancelBtn").onclick=cancelTarget;document.addEventListener("keydown",function(e){if(e.key==="Escape")cancelTarget();});
 window.OC={S:()=>S,setS:v=>{S=v;},FACTIONS,DB,setMY:m=>{MY=m;},setOnline:(o,r)=>{ONLINE=o;ROLE=r;}};
 showMenu();
 
