@@ -1637,7 +1637,7 @@ function render(){
   $("turnTag").textContent=myTurn?"— your turn —":(ONLINE?"— friend's turn —":"— enemy turn —");
   const tm=$("turnMeta");if(tm)tm.textContent="Turn "+Math.max(1,Math.ceil((S.tick||1)/2))+"  ·  next charge +"+genFor()+"⚡";
   $("endBtn").disabled=(!myTurn||busy);
-  {var _cb=$("cancelBtn");if(_cb)_cb.style.display=((pendingScript||pendingPower||selectedUnit)&&!busy)?"block":"none";}
+  {var _cancelB=$("cancelBtn");if(_cancelB)_cancelB.style.display=((pendingScript||pendingPower||selectedUnit)&&!busy)?"block":"none";}
   $("playerBoard").innerHTML=S[V].board.map(u=>unitCard(V,u)).join("");
   $("enemyBoard").innerHTML=S[O].board.map(u=>unitCard(O,u)).join("");
   const targCore=!!selectedUnit||(pendingScript&&pendingScript.def.target==="any")||(pendingPower&&pendingPower.pw&&pendingPower.pw.target==="any");
