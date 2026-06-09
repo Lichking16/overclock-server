@@ -256,6 +256,51 @@
 .fxcorepulse{animation:corepulsek .52s ease}
 @keyframes corepulsek{0%,100%{box-shadow:none}45%{box-shadow:0 0 0 2px currentColor,0 0 24px currentColor}}
 
+/* ============ MOBILE / NARROW SCREENS ============ */
+@media (max-width:768px){
+  .title{display:none}
+  .field{height:100dvh;overflow-y:auto}
+  .row{flex:0 0 auto;padding:2px 4px;gap:4px}
+  .board{min-height:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;-webkit-overflow-scrolling:touch}
+  .hand{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;-webkit-overflow-scrolling:touch}
+  .enemyhand{display:none}
+  .card{width:72px;height:96px;flex:0 0 auto}
+  .card .name{font-size:8px}.card .type{font-size:6px}.card .txt{font-size:7px;line-height:1.18}
+  .card .cost{width:19px;height:19px;font-size:10px;top:-6px;right:-6px}
+  .hart{height:24px;margin:2px 0 0}.hart .cardart{width:38px;height:22px}
+  .card.unit{width:60px;height:80px}
+  .uart .cardart{width:36px;height:22px}
+  .card .stats,.ufoot{font-size:10px}
+  .ukw{font-size:6px;min-height:6px}
+  .center{flex:0 0 50px;gap:8px}
+  .pool{width:92px;height:42px}.pool .big{font-size:19px}.pool .lbl{font-size:7px}
+  #endBtn{padding:6px 10px;font-size:10px}
+  #turnTag{font-size:9px}
+  /* sidebars -> compact full-width bars in flow */
+  .sidebar{position:static;width:100%;flex-direction:row;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;padding:2px 4px}
+  .sidebar .fname{display:none}
+  .stat{padding:3px 8px}.stat .lbl{font-size:7px}.stat .val{font-size:14px}
+  .resline{font-size:9px;padding:2px 6px}
+  .deckcount{font-size:9px}
+  .opwr{font-size:8px}
+  #powerPanel{flex-direction:row;flex-wrap:wrap;gap:3px;width:100%;justify-content:center}
+  .powerbtn{font-size:8px;padding:5px 5px;letter-spacing:0;flex:1 1 40%;min-width:0}
+  .sidebtn{font-size:9px;padding:5px 8px}
+  /* hide hover/desktop-only info panels on phone */
+  #log,#recent,#inspect,#help{display:none}
+  /* overlays / menus */
+  .overlay{padding:12px;gap:10px}
+  .overlay h1{font-size:24px;letter-spacing:3px}
+  .overlay .sub{font-size:11px}
+  .facwrap{grid-template-columns:1fr 1fr;gap:8px;max-width:100%;width:100%}
+  .fac{width:auto;padding:8px 10px}
+  .fac p{display:none}.fac h3{font-size:13px}
+  .deckmain{flex-direction:column;width:100%;max-width:100%;gap:10px}
+  .deckabil,.deckwrap,.deckprev{width:100%;max-height:none}
+  .deckwrap{column-count:1}
+  .decktabs{max-width:100%}
+}
+
 </style>
 </head>
 <body>
