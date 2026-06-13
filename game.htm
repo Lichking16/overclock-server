@@ -320,6 +320,12 @@
 .card.unit:hover .cardart .artglyph{filter:drop-shadow(0 0 4px currentColor) brightness(1.15)}
 .hand-card .cardart .artglyph{filter:drop-shadow(0 0 1.5px currentColor)}
 
+/* ===================== POLISH PASS: combat juice ===================== */
+@keyframes poofk{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.25)}}
+.fxpoof{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:24}
+.fxpoof i{position:absolute;left:0;top:0;width:6px;height:6px;margin:-3px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:poofk .54s ease-out forwards}
+.card.unit.aHit .cardart{animation:aHitk .32s ease}
+
 </style>
 </head>
 <body>
@@ -1811,7 +1817,7 @@ function unitCard(side,u){
   const arm=u.armor>0?`<div class="arm">🛡${u.armor}</div>`:"";
   const status=isPerm?(u.frame?`<span class="pstat">⬡ FRAMEWORK</span>`:u.recovery?`<span class="pstat">◆ ${u.charges||0} charge${(u.charges||0)===1?"":"s"}</span>`:u.cm?`<span class="pstat">☢ ${u.cmStacks||1}/turn</span>`:(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`)):chips(u);
   const foot=isPerm?(u.fixed?`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp" title="Indestructible">🔒</span>`:`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${u.hp}</span>`):`<span class="atk">${u.atk}</span><span class="hp">${u.hp}</span>`;
-  return `<div class="${cls.join(' ')}" data-uid="${u.uid}" data-hp="${u.hp}" onclick="onUnitClick('${side}',${u.uid})" onmouseenter="inspectCard('${u.id}')" onmouseleave="hideInspect()">
+  return `<div class="${cls.join(' ')}" data-uid="${u.uid}" data-hp="${u.hp}" data-fac="${def.f}" onclick="onUnitClick('${side}',${u.uid})" onmouseenter="inspectCard('${u.id}')" onmouseleave="hideInspect()">
     <div class="fl" style="background:${facCol(def.f)}"></div>${arm}
     <div class="name">${esc(u.name)}</div>
     <div class="uart">${iconFor(u.id)}</div>
@@ -1862,6 +1868,7 @@ function render(){
   const tm=$("turnMeta");if(tm)tm.textContent="Turn "+Math.max(1,Math.ceil((S.tick||1)/2))+"  ·  next charge +"+genFor()+"⚡";
   $("endBtn").disabled=(!myTurn||busy);
   {var _cancelB=$("cancelBtn");if(_cancelB)_cancelB.style.display=((pendingScript||pendingPower||selectedUnit)&&!busy)?"block":"none";}
+  if(ANIM_ON)capturePositions();
   $("playerBoard").innerHTML=S[V].board.filter(u=>u.type!=="permanent").map(u=>unitCard(V,u)).join("");
   $("playerPerms").innerHTML=S[V].board.filter(u=>u.type==="permanent").map(u=>unitCard(V,u)).join("");
   $("enemyBoard").innerHTML=S[O].board.filter(u=>u.type!=="permanent").map(u=>unitCard(O,u)).join("");
@@ -1896,9 +1903,21 @@ function log(who,m){if(S){S.log=S.log||[];S.log.push({w:who,m:m});if(S.log.lengt
 function renderLog(){const l=$("log");if(!l)return;l.innerHTML="";if(S&&S.log)S.log.forEach(e=>{const d=document.createElement("div");d.className="l "+e.w;d.textContent=e.m;l.appendChild(d);});l.scrollTop=l.scrollHeight;}
 
 /* ===================== ANIMATIONS (diff-based, post-render) ===================== */
-let _seen=new Set(),_snap={},_lastHand=0,_lastPool=null,_coreSnap={},_atk=null,_lastTurn=null,_sndReady=false,SOUND_ON=true,ANIM_ON=true;
-function resetAnim(){_seen=new Set();_snap={};_lastHand=0;_lastPool=null;_coreSnap={};_atk=null;_lastTurn=null;_sndReady=false;}
+let _seen=new Set(),_snap={},_lastHand=0,_lastPool=null,_coreSnap={},_atk=null,_lastTurn=null,_sndReady=false,SOUND_ON=true,ANIM_ON=true,_posSnap={};
+function resetAnim(){_seen=new Set();_snap={};_lastHand=0;_lastPool=null;_coreSnap={};_atk=null;_lastTurn=null;_sndReady=false;_posSnap={};}
 function markAttack(uid,fac,target){_atk={uid:String(uid),fac:fac||"n",t:target||{kind:"core"}};}
+function capturePositions(){
+  try{var f=$("field");if(!f)return;var fr=f.getBoundingClientRect();_posSnap={};
+    document.querySelectorAll("#playerBoard .card.unit,#enemyBoard .card.unit,#playerPerms .card.unit,#enemyPerms .card.unit").forEach(function(el){
+      var uid=el.getAttribute("data-uid");if(uid==null)return;var b=el.getBoundingClientRect();
+      _posSnap[uid]={x:b.left-fr.left+b.width/2,y:b.top-fr.top+b.height/2,col:facCol(el.getAttribute("data-fac")||"")};});
+  }catch(e){}
+}
+function deathPoof(x,y,col){
+  var f=$("field");if(!f)return;var d=document.createElement("div");d.className="fxpoof";d.style.left=x+"px";d.style.top=y+"px";d.style.color=col||"var(--muted)";
+  for(var i=0;i<6;i++){var s=document.createElement("i");var ang=(Math.PI*2*i/6)+Math.random();var dist=14+Math.random()*16;s.style.setProperty("--dx",(Math.cos(ang)*dist).toFixed(1)+"px");s.style.setProperty("--dy",(Math.sin(ang)*dist).toFixed(1)+"px");d.appendChild(s);}
+  f.appendChild(d);setTimeout(function(){d.remove();},560);
+}
 function floatNum(el,txt,kind){
   const f=$("field");if(!f||!el)return;
   const r=el.getBoundingClientRect(),fr=f.getBoundingClientRect();
@@ -1919,6 +1938,7 @@ function postAnim(){
     });
     if(_atk){if(_sndReady)sfx("attack");try{fxRunAttack(_atk);}catch(e){}_atk=null;}
     if(typeof spellFx!=="undefined"&&spellFx){try{runSpellFx(spellFx);}catch(e){}spellFx=null;}
+    if(ANIM_ON){_seen.forEach(function(uid){if(!cur.has(uid)&&_posSnap[uid]){var ps=_posSnap[uid];deathPoof(ps.x,ps.y,ps.col);}});}
     _snap=ns;_seen=cur;
     ["playerCore","enemyCore"].forEach(function(id){
       const el=$(id);if(!el)return;const vEl=el.querySelector(".val");if(!vEl)return;
@@ -1991,6 +2011,13 @@ function fxRunAttack(atk){
   if(atk.t.kind==="core"){tEl=$(bottom?"enemyCore":"playerCore");}
   else{tEl=document.querySelector("#"+(bottom?"enemyBoard":"playerBoard")+' [data-uid="'+atk.t.uid+'"]')||document.querySelector("#"+(bottom?"enemyPerms":"playerPerms")+' [data-uid="'+atk.t.uid+'"]')||$(bottom?"enemyBoard":"playerBoard");}
   if(!tEl)return;
+  try{var _f=$("field").getBoundingClientRect(),_a=aEl.getBoundingClientRect(),_b=tEl.getBoundingClientRect();
+    var dx=(_b.left+_b.width/2)-(_a.left+_a.width/2),dy=(_b.top+_b.height/2)-(_a.top+_a.height/2);
+    var m=Math.hypot(dx,dy)||1,k=Math.min(30,m)/m*0.55;
+    aEl.style.zIndex="30";aEl.style.transition="transform .13s cubic-bezier(.5,0,.7,.3)";
+    aEl.style.transform="translate("+(dx*k).toFixed(1)+"px,"+(dy*k).toFixed(1)+"px) scale(1.07)";
+    setTimeout(function(){aEl.style.transition="transform .2s cubic-bezier(.3,1.3,.5,1)";aEl.style.transform="";setTimeout(function(){aEl.style.removeProperty("z-index");aEl.style.removeProperty("transition");},220);},140);
+  }catch(e){}
   attackFx(aEl,tEl,facCol(atk.fac),ATK_STYLE[atk.fac]||"beam");
 }
 function attackFx(fromEl,toEl,color,style){
