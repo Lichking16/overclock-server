@@ -1663,10 +1663,12 @@ function aiAttacks(){
     } else {                                                          // open board: favourable trade, else pressure the face
       const en=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>0);
       const cand=en.filter(e=>att.atk>=e.hp+e.armor).map(e=>{
-        const survives=e.atk<att.hp;                                  // we live through it
-        const valueWin=(e.atk+e.hp)>=(att.atk+att.hp);                // their body is worth >= ours
-        const pressured=S.ai.core<=12;                                // we need to slow their clock
-        return {e,ok:(survives||valueWin||pressured),score:(survives?100:0)+e.atk*3+e.hp};
+        const survives=e.atk<att.hp;            // we live through it
+        const meaningful=e.atk>=3;              // worth spending an attack on
+        const tradeUp=e.atk>=att.atk;           // removes a clock as fast or faster than ours
+        const pressured=S.ai.core<=12;          // low — clear the board
+        const ok=(survives&&meaningful)||tradeUp||(pressured&&e.atk>=2);
+        return {e,ok,score:(survives?100:0)+e.atk*4+e.hp};
       }).filter(c=>c.ok).sort((a,b)=>b.score-a.score);
       target=cand.length?{kind:"unit",unit:cand[0].e}:{kind:"core"};
     }
