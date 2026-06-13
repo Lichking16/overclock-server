@@ -519,10 +519,10 @@ const DB={
   mech_titan:{f:"mech",type:"program",cost:8,atk:8,hp:8,mech:true,costScrap:{per:2,min:4},deploy:"plated3",txt:"War Titan. MECH. Costs 1 less per 2 Scrap (min 4). Deploy: Armor 3."},
   mech_reactor:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,start:"scrapEng",txt:"Reactor Core. Start: +1 Scrap and +1⚡ to Capacitor."},
   mech_forge:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,loc:{fx:"scrapPlus2",cd:1,uses:3},txt:"Assembly Forge. LOCATION · Activate: +2 Scrap. 3 uses."},
-  fw_assembly:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"assembly",start:"fwSpawn",txt:"Assembly Frame. FRAMEWORK · Start: make a Scrapling. Mechs you play gain +2/+2."},
-  fw_laser:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"laser",start:"fwBurn",txt:"Laser Cannon Frame. FRAMEWORK · Start: 1 damage to an enemy. Mechs you play gain +2/+2 and Overheat."},
-  fw_giga:{f:"mech",type:"permanent",cost:0,atk:0,hp:4,mech:true,frame:"giga",start:"fwArmor",txt:"Giga Guard Frame. FRAMEWORK · Start: your Mechs +2 Armor. Mechs you play gain +2/+2 and Guard."},
-  fw_overload:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"overload",start:"fwBoost",txt:"Overload Core Frame. FRAMEWORK · Start: a Mech +1/+1. Mechs you play gain +4/+4."},
+  fw_assembly:{f:"mech",type:"permanent",cost:0,atk:0,hp:1,fixed:true,mech:true,frame:"assembly",start:"fwSpawn",txt:"Assembly Frame. FRAMEWORK · Indestructible. Start: forge a Scrapling and +1 Scrap. Mechs you play gain +2/+2."},
+  fw_laser:{f:"mech",type:"permanent",cost:0,atk:0,hp:1,fixed:true,mech:true,frame:"laser",start:"fwBurn",txt:"Laser Cannon Frame. FRAMEWORK · Indestructible. Start: 2 damage to the strongest enemy. Mechs you play gain +2/+2 and Overheat."},
+  fw_giga:{f:"mech",type:"permanent",cost:0,atk:0,hp:1,fixed:true,mech:true,frame:"giga",start:"fwArmor",txt:"Giga Guard Frame. FRAMEWORK · Indestructible. Start: your Mechs +2 Armor. Mechs you play gain +2/+2 and Guard."},
+  fw_overload:{f:"mech",type:"permanent",cost:0,atk:0,hp:1,fixed:true,mech:true,frame:"overload",start:"fwBoost",txt:"Overload Core Frame. FRAMEWORK · Indestructible. Start: your strongest Mech +2/+2. Mechs you play gain +4/+4."},
   mech_assembler:{f:"mech",type:"program",cost:3,atk:2,hp:3,mech:true,deploy:"buildAssembly",txt:"Assembler. MECH. Deploy: spend 2 Scrap to build an Assembly Frame."},
   mech_gunner:{f:"mech",type:"program",cost:3,atk:3,hp:2,mech:true,deploy:"buildLaser",txt:"Gun Rig. MECH. Deploy: spend 2 Scrap to build a Laser Cannon Frame."},
   mech_bulwark:{f:"mech",type:"program",cost:4,atk:2,hp:5,mech:true,guard:true,deploy:"buildGiga",txt:"Bulwark. MECH. GUARD. Deploy: spend 2 Scrap to build a Giga Guard Frame."},
@@ -728,7 +728,7 @@ function buildDeck(fac){
   for(let i=d.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]];}return d;
 }
 function mkUnit(id){const c=DB[id];return{uid:uidc++,id,name:c.name||cardName(id),atk:c.atk,hp:c.hp,maxHp:c.hp,
-  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,coreOnAttack:!!c.coreOnAttack,frame:c.frame||null,drone:!!c.drone,aura:c.aura||null,recovery:!!c.recovery,charges:0,cm:!!c.cm,cmStacks:1,retaliate:!!c.retaliate,ghoul:!!c.ghoul,arcanaGrow:!!c.arcanaGrow,honeypot:!!c.honeypot,
+  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,coreOnAttack:!!c.coreOnAttack,frame:c.frame||null,fixed:!!c.fixed,drone:!!c.drone,aura:c.aura||null,recovery:!!c.recovery,charges:0,cm:!!c.cm,cmStacks:1,retaliate:!!c.retaliate,ghoul:!!c.ghoul,arcanaGrow:!!c.arcanaGrow,honeypot:!!c.honeypot,
   start:c.start,death:c.death,deploy:c.deploy,type:c.type,loc:c.loc,cd:0,uses:c.loc?c.loc.uses:0,mech:!!c.mech,harvest:!!c.harvest,vendetta:!!c.vendetta,ready:false};}
 function cardName(id){return DB[id].name||DB[id].txt.split(/[.:]/)[0];}
 
@@ -1116,7 +1116,7 @@ function spendable(p){return S.pool+S[p].cap;}
 function canPlay(p,id){const cc=DB[id].capCost||0;if(S[p].cap<cc)return false;return (S.pool+(S[p].cap-cc))>=effCost(p,id);}
 function pay(p,id){const cc=DB[id].capCost||0;if(cc)S[p].cap-=cc;let amt=effCost(p,id);const fromPool=Math.min(S.pool,amt);S.pool-=fromPool;S[p].cap-=(amt-fromPool);}
 function bankTo(p,n){const mv=Math.min(n,S.pool);S.pool-=mv;S[p].cap+=mv;return mv;}
-function hurt(u,amt){if(u.armor>0){const a=Math.min(u.armor,amt);u.armor-=a;amt-=a;if(a>0){var _p=(S.me.board.indexOf(u)>=0)?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(_p&&S[_p].board.some(function(x){return x.retaliate&&x.hp>0;})){var _o=(_p==="me"?"ai":"me");S[_o].core-=a;log("sys","Retaliation: "+a+" to "+(_o==="me"?"your":"enemy")+" Core");}}}u.hp-=amt;}
+function hurt(u,amt){if(u&&u.fixed)return;if(u.armor>0){const a=Math.min(u.armor,amt);u.armor-=a;amt-=a;if(a>0){var _p=(S.me.board.indexOf(u)>=0)?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(_p&&S[_p].board.some(function(x){return x.retaliate&&x.hp>0;})){var _o=(_p==="me"?"ai":"me");S[_o].core-=a;log("sys","Retaliation: "+a+" to "+(_o==="me"?"your":"enemy")+" Core");}}}u.hp-=amt;}
 function nUnits(p){return S[p].board.filter(function(u){return u.type!=="permanent";}).length;}
 function nPerms(p){return S[p].board.filter(function(u){return u.type==="permanent";}).length;}
 function canAdd(p,id){return (DB[id]&&DB[id].type==="permanent")?nPerms(p)<7:nUnits(p)<7;}
@@ -1161,10 +1161,10 @@ function startTurn(p){
     else if(u.start==="loadBalance"){if(nUnits(p)>=5){draw(p);log("sys",u.name+": draw (5+ units)");}}
     else if(u.start==="quarantine"){var _qd=S[p].void?2:1;S[other(p)].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,_qd);});log("sys",u.name+": "+_qd+" to all enemy units");}
     else if(u.start==="backdoor"){var _bc=S[p].board.filter(function(x){return x.stealth;}).length;if(_bc>0){S[other(p)].core-=_bc;log("sys",u.name+": "+_bc+" to enemy Core ("+_bc+" Stealth)");}}
-    else if(u.start==="fwSpawn"){makeToken(p,"mech_scrapling");log("sys",u.name+": forge a Scrapling");}
-    else if(u.start==="fwBurn"){var _lt=S[other(p)].board.filter(function(x){return x.type!=="permanent"&&!x.stealth&&x.hp>0;}).sort(function(a,b){return b.atk-a.atk;})[0];if(_lt)hurt(_lt,1);else S[other(p)].core-=1;log("sys",u.name+": 1 damage");}
+    else if(u.start==="fwSpawn"){makeToken(p,"mech_scrapling");S[p].scrap=(S[p].scrap||0)+1;log("sys",u.name+": forge a Scrapling, +1 Scrap");}
+    else if(u.start==="fwBurn"){var _lt=S[other(p)].board.filter(function(x){return x.type!=="permanent"&&!x.stealth&&x.hp>0;}).sort(function(a,b){return b.atk-a.atk;})[0];if(_lt)hurt(_lt,2);else S[other(p)].core-=2;log("sys",u.name+": 2 damage");}
     else if(u.start==="fwArmor"){S[p].board.forEach(function(x){if(x.mech)x.armor=(x.armor||0)+2;});log("sys",u.name+": your Mechs +2 Armor");}
-    else if(u.start==="fwBoost"){var _ot=S[p].board.filter(function(x){return x.mech&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(_ot){_ot.atk++;_ot.hp++;_ot.maxHp++;log("sys",u.name+": a Mech +1/+1");}}
+    else if(u.start==="fwBoost"){var _ot=S[p].board.filter(function(x){return x.mech&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(_ot){_ot.atk+=2;_ot.hp+=2;_ot.maxHp+=2;log("sys",u.name+": a Mech +2/+2");}}
   });
   S[p].board.forEach(u=>{if(u.stunned){u.stunned=false;u.ready=false;}else u.ready=true;});
   cleanup();
@@ -1800,8 +1800,8 @@ function unitCard(side,u){
     if((t==="enemyUnit"&&theirs&&!u.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth))||(t==="devil"&&mine&&isDevil(u)))cls.push("target");}
   else if(selectedUnit&&theirs&&!u.stealth)cls.push("target");
   const arm=u.armor>0?`<div class="arm">🛡${u.armor}</div>`:"";
-  const status=isPerm?(u.recovery?`<span class="pstat">◆ ${u.charges||0} charge${(u.charges||0)===1?"":"s"}</span>`:u.cm?`<span class="pstat">☢ ${u.cmStacks||1}/turn</span>`:(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`)):chips(u);
-  const foot=isPerm?`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${u.hp}</span>`:`<span class="atk">${u.atk}</span><span class="hp">${u.hp}</span>`;
+  const status=isPerm?(u.frame?`<span class="pstat">⬡ FRAMEWORK</span>`:u.recovery?`<span class="pstat">◆ ${u.charges||0} charge${(u.charges||0)===1?"":"s"}</span>`:u.cm?`<span class="pstat">☢ ${u.cmStacks||1}/turn</span>`:(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`)):chips(u);
+  const foot=isPerm?(u.fixed?`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp" title="Indestructible">🔒</span>`:`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${u.hp}</span>`):`<span class="atk">${u.atk}</span><span class="hp">${u.hp}</span>`;
   return `<div class="${cls.join(' ')}" data-uid="${u.uid}" data-hp="${u.hp}" onclick="onUnitClick('${side}',${u.uid})" onmouseenter="inspectCard('${u.id}')" onmouseleave="hideInspect()">
     <div class="fl" style="background:${facCol(def.f)}"></div>${arm}
     <div class="name">${esc(u.name)}</div>
