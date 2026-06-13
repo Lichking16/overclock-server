@@ -684,9 +684,9 @@ const POWERS={
   zd:{core:{name:"Cloak",cost:1,target:"friendly",fx:"cloak",txt:"Give a friendly unit Stealth."},
        draw:{name:"Datamine",cost:2,target:"none",fx:"datamine",txt:"Draw a card; draw 2 if you control a Stealth unit."},
        ult:{name:"Total Breach",cost:0,target:"none",fx:"ult_breach",txt:"Deal 6 directly to the enemy Core."}},
-  sng:{core:{name:"Compile",cost:1,target:"none",fx:"sngCompile",txt:"+1 Compile toward the Void Core.",vname:"Void Pulse",vcost:2,vtxt:"Deal 1 to all enemy units."},
+  sng:{core:{name:"Compile",cost:1,target:"none",fx:"sngCompile",txt:"+1 Compile toward the Void Core.",vname:"Void Pulse",vcost:2,vtxt:"Deal 2 to the enemy Core and 1 to all enemy units."},
        draw:{name:"Parse",cost:2,target:"none",fx:"sngParseP",txt:"Draw a card and +1 Compile.",vname:"Datastream",vcost:2,vtxt:"Draw 2 cards."},
-       ult:{name:"Initialize",cost:0,target:"none",fx:"sngInit",txt:"+3 Compile and +3⚡ to the pool.",vname:"System Purge",vtxt:"Deal 4 to all enemy units."}},
+       ult:{name:"Initialize",cost:0,target:"none",fx:"sngInit",txt:"+3 Compile and +3⚡ to the pool.",vname:"System Purge",vtxt:"Deal 4 to the enemy Core and 4 to all enemy units."}},
   ren:{core:{name:"Blood Pact",cost:1,target:"friendly",fx:"bloodpact",txt:"Destroy a friendly unit to raise a 2/2 Ghoul."},
        draw:{name:"Grave Robbing",cost:2,target:"none",fx:"graverob",txt:"Draw a card; draw 2 if one of your units has died."},
        ult:{name:"Conjure Curse",cost:0,target:"none",fx:"ult_curse",txt:"Add a Curse to your hand — escalating each use: Ghouls, then Plagues, then Bloodmoon."}},
@@ -1248,9 +1248,9 @@ function usePowerApply(seat,slot,target){
   recentAct={t:"act",who:seat,text:pw.name};
   if(typeof sfx==="function")sfx(slot==="ult"?"ult":"power");if(slot==="ult"&&typeof screenFlash==="function")screenFlash("rgba(255,255,255,.22)");
   switch(pw.fx){
-    case "sngCompile":if(S[seat].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,1);});cleanup();log("sys","Void Pulse: 1 to all enemy units");}else{addCompile(seat,1);}break;
+    case "sngCompile":if(S[seat].void){S[opp].core-=2;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,1);});cleanup();log("sys","Void Pulse: 2 to enemy Core, 1 to all enemy units");}else{addCompile(seat,1);}break;
     case "sngParseP":draw(seat);if(S[seat].void){draw(seat);log("sys","Datastream: draw 2");}else{addCompile(seat,1);}break;
-    case "sngInit":if(S[seat].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,4);});cleanup();log("sys","System Purge: 4 to all enemy units");}else{addCompile(seat,3);S.pool+=3;log("sys","Initialize: +3 Compile, +3⚡ pool");}break;
+    case "sngInit":if(S[seat].void){S[opp].core-=4;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,4);});cleanup();log("sys","System Purge: 4 to enemy Core, 4 to all enemy units");}else{addCompile(seat,3);S.pool+=3;log("sys","Initialize: +3 Compile, +3⚡ pool");}break;
     case "bank":bankTo(seat,pw.val||3);break;
     case "steal":if(target&&target.unit){const ix=S[opp].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&nUnits(seat)<7){S[opp].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[seat].board.push(target.unit);log("sys",(seat==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
     case "transform":if(target&&target.unit){if(isDevil(target.unit)){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}else log("sys","Only Devils can be possessed");}break;
