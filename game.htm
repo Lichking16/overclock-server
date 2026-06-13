@@ -1371,7 +1371,7 @@ function playScript(p,handIdx,target){
   log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+" run "+cardName(id));
   switch(def.fx){
     case "sngRecompile":draw(p);if(S[p].void){draw(p);log("sys","Recompile: draw 2");}else{addCompile(p,1);}break;
-    case "sngFirewall":if(target&&target.unit)hurt(target.unit,S[p].void?3:2);if(S[p].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0&&x!==(target&&target.unit))hurt(x,3);});log("sys","Firewall engulfs all enemies");}cleanup();break;
+    case "sngFirewall":if(target&&target.unit)hurt(target.unit,S[p].void?3:2);if(S[p].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,3);});log("sys","Firewall engulfs all enemies");}cleanup();break;
     case "sngPurge":{var _pv=S[p].void?5:3;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,_pv);});if(S[p].void)S[opp].core-=3;cleanup();log("sys","Void Purge: "+_pv+" to all enemies"+(S[p].void?", 3 to Core":""));break;}
     case "dmgAny":if(target.kind==="unit")hurt(target.unit,def.val);else S[target.side].core-=def.val;break;
     case "burnUnit":{let v=def.val;if(S[p].board.some(u=>u.overheat))v=def.bonus;hurt(target.unit,v);break;}
