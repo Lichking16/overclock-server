@@ -1564,16 +1564,18 @@ function aiPickPlay(){
   const th=myThreats();
   if(th.length&&th[0].atk>=3){
     const t=th[0];
-    const spike=aiIdx("n_spike");if(spike>=0&&canPlay("ai","n_spike")&&t.hp+t.armor<=3)return{i:spike,target:{kind:"unit",unit:t}};
-    const sk=aiIdx("syn_shakedown");if(sk>=0&&canPlay("ai","syn_shakedown")&&t.hp+t.armor<=3)return{i:sk,target:{kind:"unit",unit:t}};
-    const tof=aiIdx("swm_targeted");if(tof>=0&&canPlay("ai","swm_targeted")){const dmg=ai.board.filter(u=>u.drone).reduce((s,u)=>s+u.atk,0);if(dmg>=t.hp+t.armor)return{i:tof,target:{kind:"unit",unit:t}};}
-    const ocg=aiIdx("melt_overcharge");if(ocg>=0&&canPlay("ai","melt_overcharge")&&t.hp+t.armor<=4)return{i:ocg,target:{kind:"unit",unit:t}};
-    const sff=aiIdx("bas_strike");if(sff>=0&&canPlay("ai","bas_strike")&&t.hp+t.armor<=3)return{i:sff,target:{kind:"unit",unit:t}};
-    const bsb=aiIdx("zd_backstab");if(bsb>=0&&canPlay("ai","zd_backstab")){const sa=ai.board.filter(u=>u.stealth&&u.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(sa&&sa.atk>=t.hp+t.armor)return{i:bsb,target:{kind:"unit",unit:t}};}
-    const bm=aiIdx("dem_brimstone");if(bm>=0&&canPlay("ai","dem_brimstone")&&t.hp+t.armor<=3)return{i:bm,target:{kind:"unit",unit:t}};
-    const hx=aiIdx("cult_hex");if(hx>=0&&canPlay("ai","cult_hex")&&t.hp+t.armor<=3)return{i:hx,target:{kind:"unit",unit:t}};
-    const lance=aiIdx("melt_lance");if(lance>=0&&canPlay("ai","melt_lance")){const v=ai.board.some(u=>u.overheat)?3:2;if(t.hp+t.armor<=v)return{i:lance,target:{kind:"unit",unit:t}};}
-    const fwl=aiIdx("sng_firewall");if(fwl>=0&&canPlay("ai","sng_firewall")){const v=ai.void?3:2;if(t.hp+t.armor<=v)return{i:fwl,target:{kind:"unit",unit:t}};}
+    const killable=(v)=>th.filter(x=>(x.hp+(x.armor||0))<=v).sort((a,b)=>b.atk-a.atk)[0];
+    let kt;
+    const spike=aiIdx("n_spike");if(spike>=0&&canPlay("ai","n_spike")&&(kt=killable(3)))return{i:spike,target:{kind:"unit",unit:kt}};
+    const sk=aiIdx("syn_shakedown");if(sk>=0&&canPlay("ai","syn_shakedown")&&(kt=killable(3)))return{i:sk,target:{kind:"unit",unit:kt}};
+    const tof=aiIdx("swm_targeted");if(tof>=0&&canPlay("ai","swm_targeted")){const dmg=ai.board.filter(u=>u.drone).reduce((s,u)=>s+u.atk,0);if((kt=killable(dmg)))return{i:tof,target:{kind:"unit",unit:kt}};}
+    const ocg=aiIdx("melt_overcharge");if(ocg>=0&&canPlay("ai","melt_overcharge")&&(kt=killable(4)))return{i:ocg,target:{kind:"unit",unit:kt}};
+    const sff=aiIdx("bas_strike");if(sff>=0&&canPlay("ai","bas_strike")&&(kt=killable(3)))return{i:sff,target:{kind:"unit",unit:kt}};
+    const bsb=aiIdx("zd_backstab");if(bsb>=0&&canPlay("ai","zd_backstab")){const sa=ai.board.filter(u=>u.stealth&&u.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(sa&&(kt=killable(sa.atk)))return{i:bsb,target:{kind:"unit",unit:kt}};}
+    const bm=aiIdx("dem_brimstone");if(bm>=0&&canPlay("ai","dem_brimstone")&&(kt=killable(3)))return{i:bm,target:{kind:"unit",unit:kt}};
+    const hx=aiIdx("cult_hex");if(hx>=0&&canPlay("ai","cult_hex")&&(kt=killable(3)))return{i:hx,target:{kind:"unit",unit:kt}};
+    const lance=aiIdx("melt_lance");if(lance>=0&&canPlay("ai","melt_lance")){const v=ai.board.some(u=>u.overheat)?3:2;if((kt=killable(v)))return{i:lance,target:{kind:"unit",unit:kt}};}
+    const fwl=aiIdx("sng_firewall");if(fwl>=0&&canPlay("ai","sng_firewall")){const v=ai.void?3:2;if((kt=killable(v)))return{i:fwl,target:{kind:"unit",unit:kt}};}
     const rd=aiIdx("ren_raise");if(rd>=0&&canPlay("ai","ren_raise")&&ai.board.filter(u=>u.type!=="permanent").length<7)return{i:rd,target:{kind:"unit",unit:t}};
   }
   // MECHS: set up Frameworks early, then flood cheap Mechs that inherit the frame buffs
@@ -1624,6 +1626,7 @@ function aiPickPlay(){
   const inj=aiIdx("melt_inject");if(inj>=0&&canPlay("ai","melt_inject")){const u=ai.board.filter(x=>x.hp>2).sort((a,b)=>b.atk-a.atk)[0];if(u)return{i:inj,target:{kind:"unit",unit:u}};}
   {const pg=aiIdx("sng_purge");if(pg>=0&&canPlay("ai","sng_purge")){const v=ai.void?5:3;const kills=S.me.board.filter(u=>u.type!=="permanent"&&u.hp>0&&u.hp+(u.armor||0)<=v).length;if(kills>=2)return{i:pg};}}
   {const rc=aiIdx("sng_recompile");if(rc>=0&&canPlay("ai","sng_recompile")&&(!ai.void||ai.hand.length<=4))return{i:rc};}
+  {const _gn=ai.board.filter(u=>u.type!=="permanent").length;const incoming=S.me.board.filter(u=>u.type!=="permanent"&&u.atk>0&&!u.stealth).reduce((s,u)=>s+u.atk,0);if((incoming>=8||ai.core<=12)&&_gn<6){let gi=-1,gh=-1;ai.hand.forEach((id,i)=>{const c=DB[id];if(c.type==="program"&&c.guard&&canPlay("ai",id)&&c.hp>gh){gi=i;gh=c.hp;}});if(gi>=0)return{i:gi};}}
   const _bN=ai.board.filter(u=>u.type!=="permanent").length;let best=-1,bc=-1;ai.hand.forEach((id,i)=>{const c=DB[id];if(((c.type==="permanent")||(c.type==="program"&&_bN<6))&&canPlay("ai",id)&&effCost("ai",id)>bc){best=i;bc=effCost("ai",id);}});
   if(best>=0)return{i:best};
   return null;
