@@ -314,6 +314,12 @@
   .perms .card.unit{width:56px;height:74px}
 }
 
+/* ===================== POLISH PASS: card art depth ===================== */
+.cardart .artglyph{filter:drop-shadow(0 0 2px currentColor)}
+.card.unit .cardart{transition:filter .18s ease,transform .18s ease}
+.card.unit:hover .cardart .artglyph{filter:drop-shadow(0 0 4px currentColor) brightness(1.15)}
+.hand-card .cardart .artglyph{filter:drop-shadow(0 0 1.5px currentColor)}
+
 </style>
 </head>
 <body>
@@ -935,8 +941,8 @@ const ART={
   carn_bigtop:'<path d="M8 26h32 M12 26V14l12-8 12 8v12 M24 6v20 M16 11v15 M32 11v15"/>',
   carn_stage:'<path d="M14 10h20v8c0 6-5 10-10 10s-10-4-10-10z"/><path d="M19 15l3 2 M29 15l-3 2"/><path d="M21 24a4 3 0 016 0"/>',
 };
-function iconFor(id){const col=facCol(DB[id].f);
-  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ART[id]||ART.n_grunt}</svg>`;}
+function iconFor(id){const col=facCol(DB[id].f);const gid="ag_"+id;
+  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><radialGradient id="${gid}" cx="50%" cy="44%" r="62%"><stop offset="0%" stop-color="currentColor" stop-opacity=".28"/><stop offset="55%" stop-color="currentColor" stop-opacity=".07"/><stop offset="100%" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><rect x="0" y="0" width="48" height="32" fill="url(#${gid})"/><g class="artglyph">${ART[id]||ART.n_grunt}</g></svg>`;}
 
 </script>
 <script>
