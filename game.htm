@@ -1306,7 +1306,7 @@ function aiPickPower(){
   if(ai.used&&!ai.used.core&&spendable("ai")>=POWERS[f].core.cost){
     if(f==="bas"&&ai.core<16)return{power:true,slot:"core"};
     if(f==="syn")return{power:true,slot:"core"};
-    if(f==="sng"){if(!ai.void)return{power:true,slot:"core"};const en=S.me.board.filter(u=>u.type!=="permanent"&&u.hp>0);if(en.length)return{power:true,slot:"core"};}
+    if(f==="sng")return{power:true,slot:"core"};
     if(f==="swm"&&ai.board.filter(u=>u.type!=="permanent").length<6)return{power:true,slot:"core"};
     if(f==="melt"){const t=S.me.board.filter(u=>u.type!=="permanent"&&!u.stealth&&u.hp+u.armor===1).sort((a,b)=>b.atk-a.atk)[0];if(t)return{power:true,slot:"core",target:{kind:"unit",unit:t}};if(S.me.core<=4)return{power:true,slot:"core",target:{kind:"core",side:"me"}};}
     if(f==="zd"){const u=ai.board.find(x=>x.atk>=3&&!x.stealth&&x.type!=="permanent");if(u)return{power:true,slot:"core",target:{kind:"unit",unit:u}};}
