@@ -519,10 +519,10 @@ const DB={
   mech_titan:{f:"mech",type:"program",cost:8,atk:8,hp:8,mech:true,costScrap:{per:2,min:4},deploy:"plated3",txt:"War Titan. MECH. Costs 1 less per 2 Scrap (min 4). Deploy: Armor 3."},
   mech_reactor:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,start:"scrapEng",txt:"Reactor Core. Start: +1 Scrap and +1⚡ to Capacitor."},
   mech_forge:{f:"mech",type:"permanent",cost:3,atk:0,hp:4,loc:{fx:"scrapPlus2",cd:1,uses:3},txt:"Assembly Forge. LOCATION · Activate: +2 Scrap. 3 uses."},
-  fw_assembly:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"assembly",loc:{fx:"fwScrapling",capCost:1,cd:1,uses:99},txt:"Assembly Frame. FRAMEWORK · Overload 1: make a Scrapling. Colossus: +2/+2 and 2 Scraplings."},
-  fw_laser:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"laser",loc:{fx:"fwLaser",capCost:1,cd:1,uses:99},txt:"Laser Cannon Frame. FRAMEWORK · Overload 1: 1 damage to an enemy. Colossus: Overheat and +2/+2."},
-  fw_giga:{f:"mech",type:"permanent",cost:0,atk:0,hp:4,mech:true,frame:"giga",loc:{fx:"fwGiga",capCost:1,cd:1,uses:99},txt:"Giga Guard Frame. FRAMEWORK · Overload 1: your Mechs +2 Armor. Colossus: Guard and +2/+2."},
-  fw_overload:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"overload",loc:{fx:"fwOverload",capCost:1,cd:1,uses:99},txt:"Overload Core Frame. FRAMEWORK · Overload 1: a Mech +1/+1. Colossus: +4/+4."},
+  fw_assembly:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"assembly",start:"fwSpawn",txt:"Assembly Frame. FRAMEWORK · Start: make a Scrapling. Mechs you play gain +2/+2."},
+  fw_laser:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"laser",start:"fwBurn",txt:"Laser Cannon Frame. FRAMEWORK · Start: 1 damage to an enemy. Mechs you play gain +2/+2 and Overheat."},
+  fw_giga:{f:"mech",type:"permanent",cost:0,atk:0,hp:4,mech:true,frame:"giga",start:"fwArmor",txt:"Giga Guard Frame. FRAMEWORK · Start: your Mechs +2 Armor. Mechs you play gain +2/+2 and Guard."},
+  fw_overload:{f:"mech",type:"permanent",cost:0,atk:0,hp:3,mech:true,frame:"overload",start:"fwBoost",txt:"Overload Core Frame. FRAMEWORK · Start: a Mech +1/+1. Mechs you play gain +4/+4."},
   mech_assembler:{f:"mech",type:"program",cost:3,atk:2,hp:3,mech:true,deploy:"buildAssembly",txt:"Assembler. MECH. Deploy: spend 2 Scrap to build an Assembly Frame."},
   mech_gunner:{f:"mech",type:"program",cost:3,atk:3,hp:2,mech:true,deploy:"buildLaser",txt:"Gun Rig. MECH. Deploy: spend 2 Scrap to build a Laser Cannon Frame."},
   mech_bulwark:{f:"mech",type:"program",cost:4,atk:2,hp:5,mech:true,guard:true,deploy:"buildGiga",txt:"Bulwark. MECH. GUARD. Deploy: spend 2 Scrap to build a Giga Guard Frame."},
@@ -1121,6 +1121,7 @@ function nUnits(p){return S[p].board.filter(function(u){return u.type!=="permane
 function nPerms(p){return S[p].board.filter(function(u){return u.type==="permanent";}).length;}
 function canAdd(p,id){return (DB[id]&&DB[id].type==="permanent")?nPerms(p)<7:nUnits(p)<7;}
 function makeToken(p,id){if(!canAdd(p,id))return;const u=mkUnit(id);u.token=true;u.ready=false;applyPerm(p,u);S[p].board.push(u);}
+function applyFrames(p,u){var n=0;S[p].board.forEach(function(fw){if(!fw.frame||fw.hp<=0)return;n++;if(fw.frame==="assembly"){u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="laser"){u.overheat=true;u.ready=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="giga"){u.guard=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="overload"){u.atk+=4;u.hp+=4;u.maxHp+=4;}});if(n)log("sys",u.name+" forged by "+n+" Framework"+(n>1?"s":"")+" → "+u.atk+"/"+u.hp);}
 function summon(p,id){if(!canAdd(p,id))return;const u=mkUnit(id);u.ready=false;applyPerm(p,u);S[p].board.push(u);}
 function addCore(p,n){S[p].core+=n;if(n>0)S[p].coreGainedTurn=(S[p].coreGainedTurn||0)+n;if(n>0&&S[p].board.some(function(x){return x.rally&&x.hp>0;})){var t=S[p].board.filter(function(u){return u.type!=="permanent"&&u.hp>0;});if(t.length){var a=t[Math.floor(Math.random()*t.length)];a.atk+=2;log("sys","Rally: "+a.name+" +2 ATK");}}}
 function wiretap(p){var o=other(p);if(S[o].board.some(function(x){return x.bankEnemyPlay&&x.hp>0;})){S[o].cap+=1;log("sys","Wiretap: "+(o==="me"?"you":"enemy")+" bank 1⚡");}}
@@ -1160,6 +1161,10 @@ function startTurn(p){
     else if(u.start==="loadBalance"){if(nUnits(p)>=5){draw(p);log("sys",u.name+": draw (5+ units)");}}
     else if(u.start==="quarantine"){var _qd=S[p].void?2:1;S[other(p)].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,_qd);});log("sys",u.name+": "+_qd+" to all enemy units");}
     else if(u.start==="backdoor"){var _bc=S[p].board.filter(function(x){return x.stealth;}).length;if(_bc>0){S[other(p)].core-=_bc;log("sys",u.name+": "+_bc+" to enemy Core ("+_bc+" Stealth)");}}
+    else if(u.start==="fwSpawn"){makeToken(p,"mech_scrapling");log("sys",u.name+": forge a Scrapling");}
+    else if(u.start==="fwBurn"){var _lt=S[other(p)].board.filter(function(x){return x.type!=="permanent"&&!x.stealth&&x.hp>0;}).sort(function(a,b){return b.atk-a.atk;})[0];if(_lt)hurt(_lt,1);else S[other(p)].core-=1;log("sys",u.name+": 1 damage");}
+    else if(u.start==="fwArmor"){S[p].board.forEach(function(x){if(x.mech)x.armor=(x.armor||0)+2;});log("sys",u.name+": your Mechs +2 Armor");}
+    else if(u.start==="fwBoost"){var _ot=S[p].board.filter(function(x){return x.mech&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(_ot){_ot.atk++;_ot.hp++;_ot.maxHp++;log("sys",u.name+": a Mech +1/+1");}}
   });
   S[p].board.forEach(u=>{if(u.stunned){u.stunned=false;u.ready=false;}else u.ready=true;});
   cleanup();
@@ -1321,7 +1326,7 @@ function aiPickPower(){
 /* ===================== PLAY ===================== */
 function playProgram(p,handIdx){
   const id=S[p].hand[handIdx];const _cs=(DB[id]&&DB[id].deploy==="cashout")?Math.max(0,effCost(p,id)-S.pool):0;pay(p,id);S[p].hand.splice(handIdx,1);recentAct={t:"card",id:id,who:p};
-  const u=mkUnit(id);u.ready=!!u.overheat;if(S[p].void&&DB[id].vatk!=null){u.atk=DB[id].vatk;u.hp=DB[id].vhp;u.maxHp=DB[id].vhp;}applyPerm(p,u);u._cs=_cs;S[p].board.push(u);if(DB[id].type==='program'){var _ho=other(p);if(S[_ho].board.some(function(x){return x.honeypot&&x.hp>0;})){hurt(u,S[_ho].void?2:1);log('sys','Honeypot stings '+u.name);}}
+  const u=mkUnit(id);u.ready=!!u.overheat;if(S[p].void&&DB[id].vatk!=null){u.atk=DB[id].vatk;u.hp=DB[id].vhp;u.maxHp=DB[id].vhp;}applyPerm(p,u);if(u.mech&&u.type==='program'&&!u.frame)applyFrames(p,u);u._cs=_cs;S[p].board.push(u);if(DB[id].type==='program'){var _ho=other(p);if(S[_ho].board.some(function(x){return x.honeypot&&x.hp>0;})){hurt(u,S[_ho].void?2:1);log('sys','Honeypot stings '+u.name);}}
   log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+(u.type==="permanent"?" build ":" deploy ")+u.name);
   // deploy triggers
   switch(u.deploy){
