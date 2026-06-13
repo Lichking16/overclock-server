@@ -506,9 +506,9 @@ const DB={
   ren_reanimate:{f:"ren",type:"script",cost:3,fx:"reanimate",target:"none",txt:"Reanimate: summon the last creature that died for you."},
   ren_plague:{f:"ren",type:"script",cost:4,fx:"empEnemy",val:2,target:"none",txt:"Plague: deal 2 to all enemy units."},
   ren_execute:{f:"ren",type:"script",cost:3,fx:"execute",target:"friendly",txt:"Execute: sacrifice a friendly unit to destroy 2 random enemy units."},
-  ren_curse_ghouls:{f:"ren",type:"script",cost:3,fx:"curseGhouls",target:"none",curse:true,name:"Curse: Ghouls",txt:"Summon four Ghouls; all your Ghouls — now and later — get +2/+2."},
-  ren_curse_plague:{f:"ren",type:"script",cost:3,fx:"cursePlague",target:"none",curse:true,name:"Curse: Plagues",txt:"Deal 2 to all enemy units and the enemy Core; each surviving enemy unit becomes a 2/2 Ghoul."},
-  ren_curse_bloodmoon:{f:"ren",type:"script",cost:3,fx:"curseBloodmoon",target:"none",curse:true,name:"Curse: Bloodmoon",txt:"Deal 1 to the enemy Core for each unit that has died this game."},
+  ren_curse_ghouls:{f:"ren",type:"script",cost:3,fx:"curseGhouls",target:"none",curse:true,name:"Curse: Ghouls",txt:"Summon three Ghouls; all your Ghouls — now and later — get +1/+1."},
+  ren_curse_plague:{f:"ren",type:"script",cost:3,fx:"cursePlague",target:"none",curse:true,name:"Curse: Plagues",txt:"Deal 2 to all enemy units and the enemy Core; each surviving enemy unit becomes a 2/2 Ghoul. Your Ghouls get +1/+1."},
+  ren_curse_bloodmoon:{f:"ren",type:"script",cost:3,fx:"curseBloodmoon",target:"none",curse:true,name:"Curse: Bloodmoon",txt:"Deal 1 to the enemy Core for each unit that has died this game. Your Ghouls get +1/+1."},
 
   /* MECHS */
   mech_scrapling:{f:"mech",type:"program",cost:1,atk:1,hp:1,mech:true,txt:"Scrapling. MECH."},
@@ -1125,6 +1125,7 @@ function applyFrames(p,u){var n=0;S[p].board.forEach(function(fw){if(!fw.frame||
 function summon(p,id){if(!canAdd(p,id))return;const u=mkUnit(id);u.ready=false;applyPerm(p,u);S[p].board.push(u);}
 function addCore(p,n){S[p].core+=n;if(n>0)S[p].coreGainedTurn=(S[p].coreGainedTurn||0)+n;if(n>0&&S[p].board.some(function(x){return x.rally&&x.hp>0;})){var t=S[p].board.filter(function(u){return u.type!=="permanent"&&u.hp>0;});if(t.length){var a=t[Math.floor(Math.random()*t.length)];a.atk+=2;log("sys","Rally: "+a.name+" +2 ATK");}}}
 function wiretap(p){var o=other(p);if(S[o].board.some(function(x){return x.bankEnemyPlay&&x.hp>0;})){S[o].cap+=1;log("sys","Wiretap: "+(o==="me"?"you":"enemy")+" bank 1⚡");}}
+function buffGhouls(p,n){S[p].ghoulBuff=S[p].ghoulBuff||{atk:0,hp:0};S[p].ghoulBuff.atk+=n;S[p].ghoulBuff.hp+=n;S[p].board.forEach(function(x){if(x.ghoul){x.atk+=n;x.hp+=n;x.maxHp+=n;}});}
 function applyPerm(p,u){const b=S[p]&&S[p].permBuff;if(b&&(b.atk||b.hp)){u.atk+=b.atk;u.hp+=b.hp;u.maxHp+=b.hp;}if(u.drone&&S[p]&&S[p].board){if(S[p].board.some(function(x){return x.aura==="atk1";}))u.atk+=1;if(S[p].board.some(function(x){return x.aura==="hp1";})){u.hp+=1;u.maxHp+=1;}}if(u.ghoul&&S[p]&&S[p].ghoulBuff&&(S[p].ghoulBuff.atk||S[p].ghoulBuff.hp)){u.atk+=S[p].ghoulBuff.atk;u.hp+=S[p].ghoulBuff.hp;u.maxHp+=S[p].ghoulBuff.hp;}}
 function transformDemon(u){u.atk=4;u.hp=4;u.maxHp=4;u.name="Demon";u.id="dem_demon";u.demon=true;const p=S.me.board.indexOf(u)>=0?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(p&&S[p].permBuff){u.atk+=S[p].permBuff.atk;u.hp+=S[p].permBuff.hp;u.maxHp+=S[p].permBuff.hp;}if(p)S[p].ascends=(S[p].ascends||0)+1;}
 function queueHorror(p){const size=Math.min(10,2+(S[p].summons||0));S[p].summons=(S[p].summons||0)+1;(S._pend=S._pend||[]).push({p:p,size:size});}
@@ -1426,9 +1427,9 @@ function playScript(p,handIdx,target){
     case "maintenance":draw(p);addCore(p,2);break;
     case "backstab":{var _a=S[p].board.filter(function(x){return x.stealth&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];var _d=_a?_a.atk:0;if(target&&target.unit&&_d>0){hurt(target.unit,_d);_a.stealth=false;log("sys","Backstab: "+_d+" damage; "+_a.name+" revealed");}else log("sys","Backstab: no Stealth unit");break;}
     case "execute":{if(target&&target.unit)target.unit.hp=0;var en=S[opp].board.filter(function(x){return x.type!=="permanent"&&x.hp>0;});for(var k=0;k<2&&en.length;k++){var ix=Math.random()*en.length|0;en[ix].hp=0;en.splice(ix,1);}log("sys","Execute: 1 sacrificed, 2 enemies destroyed");break;}
-    case "curseGhouls":{S[p].ghoulBuff=S[p].ghoulBuff||{atk:0,hp:0};S[p].ghoulBuff.atk+=2;S[p].ghoulBuff.hp+=2;S[p].board.forEach(function(x){if(x.ghoul){x.atk+=2;x.hp+=2;x.maxHp+=2;}});for(var g=0;g<4;g++)makeToken(p,"ren_ghoul");log("sys","Curse of Ghouls: 4 Ghouls, all Ghouls +2/+2");break;}
-    case "cursePlague":{S[opp].board.forEach(function(x){if(x.type!=="permanent")hurt(x,2);});S[opp].core-=2;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0){x.atk=2;x.hp=2;x.maxHp=2;x.armor=0;x.id="ren_ghoul";x.name="Ghoul";x.ghoul=true;}});log("sys","Curse of Plagues — the enemy is plagued into Ghouls");break;}
-    case "curseBloodmoon":{var _bm=S.deaths||0;S[opp].core-=_bm;log("sys","Bloodmoon: "+_bm+" to enemy Core ("+_bm+" deaths)");break;}
+    case "curseGhouls":{buffGhouls(p,1);for(var g=0;g<3;g++)makeToken(p,"ren_ghoul");log("sys","Curse of Ghouls: 3 Ghouls, all Ghouls +1/+1");break;}
+    case "cursePlague":{S[opp].board.forEach(function(x){if(x.type!=="permanent")hurt(x,2);});S[opp].core-=2;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0){x.atk=2;x.hp=2;x.maxHp=2;x.armor=0;x.id="ren_ghoul";x.name="Ghoul";x.ghoul=true;}});buffGhouls(p,1);log("sys","Curse of Plagues — the enemy is plagued into Ghouls; your Ghouls +1/+1");break;}
+    case "curseBloodmoon":{var _bm=S.deaths||0;S[opp].core-=_bm;buffGhouls(p,1);log("sys","Bloodmoon: "+_bm+" to enemy Core ("+_bm+" deaths); your Ghouls +1/+1");break;}
     case "invokevoid":{var _iv=2*(S[p].summons||0);S[opp].core-=_iv;log("sys","Invoke the Void: "+_iv+" to enemy Core ("+(S[p].summons||0)+" Rituals)");break;}
     case "hex":{if(target&&target.unit){hurt(target.unit,def.val);conductRitual(p,1);if(target.unit.hp<=0)conductRitual(p,1);log("sys","Hex: "+def.val+" damage, Ritual fed");}break;}
     case "buildFrame":{var ks=["assembly","laser","giga","overload"];buildFramework(p,ks[Math.random()*ks.length|0],false);break;}
