@@ -302,8 +302,17 @@
 }
 /* snappy tapping on touch devices */
 .card,button,.powerbtn,.sidebtn,.fac,.dtab,.drow,.kwbtn,.stat{touch-action:manipulation}
-.cancelbtn{background:linear-gradient(180deg,#3d1320,#260c16);color:var(--red);border:1px solid var(--red);border-radius:9px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:11px;margin-top:6px}
+.cancelbtn{background:linear-gradient(180deg,#3d1320,#260c16);color:var(--red);border:1px solid var(--red);border-radius:9px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:11px}
+.center .turnbox:has(#endBtn){flex-direction:row;gap:8px}
 .cancelbtn:hover{box-shadow:0 0 14px rgba(255,84,104,.4)}
+/* permanent zone — separated from the unit battle line */
+.perms{flex:0 0 auto;min-height:0;gap:6px;padding:1px 12px}
+.perms:empty{display:none}
+.perms .card.unit{width:74px;height:88px;opacity:.97}
+@media (max-width:768px){
+  .perms{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;padding:1px 4px}
+  .perms .card.unit{width:56px;height:74px}
+}
 
 </style>
 </head>
@@ -320,11 +329,13 @@
   </div>
   <div class="row enemyhand" id="enemyHand"></div>
   <div class="row board" id="enemyBoard"></div>
+  <div class="row perms" id="enemyPerms"></div>
   <div class="center">
     <div class="turnbox"><div id="turnTag">— your turn —</div><div id="turnMeta" class="turnmeta"></div></div>
     <div class="pool"><div class="big" id="poolVal">0</div><div class="lbl">Shared Pool ⚡</div></div>
     <div class="turnbox"><button id="endBtn">End Turn ▸</button><button id="cancelBtn" class="cancelbtn" style="display:none">✕ Cancel</button></div>
   </div>
+  <div class="row perms" id="playerPerms"></div>
   <div class="row board" id="playerBoard"></div>
   <div class="row hand" id="playerHand"></div>
   <div id="playerBar" class="sidebar">
@@ -354,7 +365,7 @@
 
 /* ===================== FACTIONS ===================== */
 const FACTIONS={
-  syn:{name:"SYNDICATE",col:"--f-syn",rel:"Privatizes the pool",kw:"Leech — bank ⚡ when you attack",
+  syn:{name:"SYNDICATE",col:"--f-syn",rel:"Privatizes the pool",kw:"Launder — bank ⚡ when you attack",
     blurb:"Thieves and loan sharks. Bank Watts into your private Capacitor, steal the enemy's, and grow units that scale with your hoard."},
   swm:{name:"SWARM",col:"--f-swm",rel:"Drains the pool cheaply",kw:"Replicate — deploys also make Drones",
     blurb:"A distributed botnet. Flood the board with cheap units and tokens, then buff the whole swarm and overrun."},
@@ -397,18 +408,29 @@ const DB={
   n_tesla:{f:"n",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"coreDmg3",cd:1,uses:3,capCost:2},txt:"Tesla Coil. LOCATION · OVERLOAD ⚡2: 3 to enemy Core. 3 uses."},
 
   /* SYNDICATE */
-  syn_broker:{f:"syn",type:"program",cost:2,atk:2,hp:2,leech:true,txt:"Data Broker. LEECH."},
-  syn_shark:{f:"syn",type:"program",cost:3,atk:3,hp:3,leech:true,deploy:"bank2",txt:"Loan Shark. LEECH. Deploy: bank 2⚡."},
-  syn_enf:{f:"syn",type:"program",cost:4,atk:4,hp:4,leech:true,txt:"Enforcer. LEECH."},
+  syn_broker:{f:"syn",type:"program",cost:2,atk:2,hp:2,leech:true,txt:"Data Broker. LAUNDER."},
+  syn_shark:{f:"syn",type:"program",cost:3,atk:3,hp:3,leech:true,deploy:"bank2",txt:"Loan Shark. LAUNDER. Deploy: bank 2⚡."},
+  syn_enf:{f:"syn",type:"program",cost:4,atk:4,hp:4,leech:true,txt:"Enforcer. LAUNDER."},
   syn_golem:{f:"syn",type:"program",cost:5,atk:4,hp:6,deploy:"scaleCap",txt:"Vault Golem. Deploy: +1 ATK per 2⚡ banked."},
   syn_market:{f:"syn",type:"script",cost:1,fx:"bank",val:4,target:"none",txt:"Black Market: bank up to 4⚡."},
   syn_extort:{f:"syn",type:"script",cost:2,fx:"extort",target:"none",txt:"Extortion: steal 2⚡ from enemy; if none, 2 to their Core."},
   syn_insider:{f:"syn",type:"script",cost:2,fx:"drawPerCap",target:"none",txt:"Insider Trading: draw 1 per 3⚡ banked."},
   syn_vault:{f:"syn",type:"program",cost:3,atk:1,hp:5,guard:true,bankOnHit:true,txt:"Vault Guard. GUARD. When attacked, bank 1⚡."},
   syn_wiretap:{f:"syn",type:"permanent",cost:3,atk:0,hp:4,bankEnemyPlay:true,txt:"Wiretap. Whenever an opponent plays a card, bank 1⚡."},
+  syn_margin:{f:"syn",type:"permanent",cost:3,atk:0,hp:4,start:"marginCall",txt:"Margin Call. Start of your turn: if the enemy has under 2⚡ banked, deal 3 to their Core."},
+  syn_cashout:{f:"syn",type:"script",cost:2,fx:"cashburn",target:"none",txt:"Cash Out. Deal damage to the enemy Core equal to your banked ⚡, then empty your Capacitor."},
+  syn_kingpin:{f:"syn",type:"program",cost:5,atk:5,hp:5,deploy:"cashout",txt:"Kingpin. Deploy: +1/+1 and 1 to the enemy Core for each ⚡ spent from your Capacitor to play it."},
+  syn_shakedown:{f:"syn",type:"script",cost:2,fx:"shakedown",val:3,target:"any",txt:"Shakedown: deal 3 to any unit or Core, then bank 1⚡."},
 
   /* SWARM */
-  swm_drone:{f:"swm",type:"program",cost:1,atk:1,hp:1,txt:"Drone token."},
+  swm_drone:{f:"swm",type:"program",cost:1,atk:1,hp:1,drone:true,txt:"Drone token."},
+  swm_mega:{f:"swm",type:"program",cost:0,atk:1,hp:1,drone:true,txt:"Mega Drone. A reconstituted swarm."},
+  botnet_relay:{f:"swm",type:"permanent",cost:2,atk:0,hp:3,start:"spawnDrone",txt:"Botnet Relay. Start of your turn: make a 1/1 Drone."},
+  hive_cluster:{f:"swm",type:"permanent",cost:3,atk:0,hp:4,aura:"atk1",deploy:"anthemAtk",txt:"Hive Cluster. Your units +1 ATK, and new Drones enter with +1 ATK."},
+  proxy_net:{f:"swm",type:"permanent",cost:3,atk:0,hp:4,aura:"hp1",deploy:"anthemHp",txt:"Proxy Network. Your units +1 HP, and new Drones enter with +1 HP."},
+  load_balancer:{f:"swm",type:"permanent",cost:3,atk:0,hp:4,start:"loadBalance",txt:"Load Balancer. Start of your turn: if you control 5+ units, draw a card."},
+  recovery_bay:{f:"swm",type:"permanent",cost:3,atk:0,hp:5,recovery:true,loc:{fx:"recoveryMega",cd:0,uses:99},txt:"Recovery Bay. When a Drone dies, gain a charge. Activate: spend all charges to assemble a Mega Drone (+1/+1 per charge)."},
+  swm_targeted:{f:"swm",type:"script",cost:2,fx:"targetedOffense",target:"enemyUnit",txt:"Targeted Offense: deal damage to an enemy unit equal to the total ATK of all your Drones."},
   swm_ddos:{f:"swm",type:"script",cost:2,fx:"dmgPerUnit",target:"none",txt:"DDoS: deal damage to the enemy Core equal to the number of units you control."},
   swm_infest:{f:"swm",type:"script",cost:2,fx:"empEnemy",val:1,target:"none",txt:"Infestation: deal 1 to all enemy units."},
   swm_node:{f:"swm",type:"program",cost:2,atk:1,hp:3,start:"spawnDrone",txt:"Spawn Node. Start: make a 1/1 Drone."},
@@ -435,6 +457,9 @@ const DB={
   bas_patch:{f:"bas",type:"script",cost:1,fx:"gainCore",val:4,target:"none",txt:"Patch Cable: gain 4 Core."},
   bas_rally:{f:"bas",type:"permanent",cost:4,atk:0,hp:5,rally:true,txt:"Rally Conduit. Whenever you gain Core, an allied unit gets +2 ATK."},
   bas_recruit:{f:"bas",type:"program",cost:0,atk:1,hp:1,coreOnAttack:true,txt:"Recruit. When it attacks, gain 1 Core."},
+  bas_strike:{f:"bas",type:"script",cost:2,fx:"strikeforce",val:3,self:2,target:"any",txt:"Strike Force: deal 3 to any unit or Core; your most-armored unit takes 2 damage."},
+  bas_retaliate:{f:"bas",type:"permanent",cost:4,atk:0,hp:5,retaliate:true,txt:"Retaliation. Whenever Armor on your units absorbs damage, deal that much to the enemy Core."},
+  bas_maint:{f:"bas",type:"script",cost:1,fx:"maintenance",target:"none",txt:"Maintenance: draw a card and gain 2 Core."},
 
   /* ZERO-DAY */
   zd_root:{f:"zd",type:"program",cost:1,atk:2,hp:1,stealth:true,txt:"Rootkit. STEALTH."},
@@ -445,23 +470,20 @@ const DB={
   zd_exploit:{f:"zd",type:"script",cost:2,fx:"coreDmg",val:3,target:"none",txt:"Zero-Day Exploit: 3 directly to enemy Core."},
   zd_virus:{f:"zd",type:"script",cost:2,fx:"stun",target:"enemyUnit",txt:"Virus: stun an enemy unit — it can't act on its next turn."},
   zd_blades:{f:"zd",type:"script",cost:2,fx:"stealthBuff",val:2,target:"none",txt:"Shadow Blades: your Stealthed units get +2 ATK."},
+  zd_backstab:{f:"zd",type:"script",cost:2,fx:"backstab",target:"enemyUnit",txt:"Backstab: deal damage to an enemy unit equal to the ATK of your strongest Stealth unit, then that unit leaves Stealth."},
+  zd_backdoor:{f:"zd",type:"permanent",cost:3,atk:0,hp:4,start:"backdoor",txt:"Backdoor. Start of your turn: deal 1 to the enemy Core for each Stealth unit you control."},
 
   /* SINGULARITY */
-  sng_plant:{f:"sng",type:"program",cost:3,atk:0,hp:4,start:"poolPlus2",txt:"Power Plant. Start: +2⚡ to shared pool."},
-  sng_archive:{f:"sng",type:"program",cost:2,atk:1,hp:3,deploy:"draw1",txt:"Data Archive. Deploy: draw a card."},
-  sng_net:{f:"sng",type:"program",cost:4,atk:3,hp:3,deploy:"scaleCompile",txt:"Neural Net. Deploy: +1/+1 per 3 Compile."},
-  sng_engine:{f:"sng",type:"program",cost:7,atk:6,hp:6,costCompile:{per:5,min:3},txt:"Singularity Engine. Costs 1 less per 5 Compile (min 3)."},
-  sng_sub:{f:"sng",type:"script",cost:1,fx:"cantrip",val:1,target:"none",txt:"Subroutine: draw a card. (+Compile)"},
-  sng_quantum:{f:"sng",type:"script",cost:3,fx:"capPlus",val:4,target:"none",txt:"Quantum Core: bank 4⚡ to your Capacitor."},
-  sng_recur:{f:"sng",type:"script",cost:2,fx:"poolPlus",val:5,target:"none",txt:"Surge Routine: +5⚡ to the shared pool."},
 
   /* higher-quality creatures */
-  syn_boss:{f:"syn",type:"program",cost:5,atk:4,hp:5,leech:true,deploy:"bank3",txt:"Cartel Boss. LEECH. Deploy: bank 3⚡."},
+  syn_boss:{f:"syn",type:"program",cost:5,atk:4,hp:5,leech:true,deploy:"bank3",txt:"Cartel Boss. LAUNDER. Deploy: bank 3⚡."},
   swm_queen:{f:"swm",type:"program",cost:5,atk:3,hp:5,deploy:"replicate2",txt:"Hive Queen. Deploy: create two 1/1 Drones."},
   melt_drake:{f:"melt",type:"program",cost:5,atk:5,hp:4,overheat:true,deploy:"burnAll1",txt:"Inferno Drake. OVERHEAT. Deploy: 1 to all enemy units."},
+  melt_brute:{f:"melt",type:"program",cost:4,atk:4,hp:4,overheat:true,deploy:"burnCore2",txt:"Magma Brute. OVERHEAT. Deploy: 2 to the enemy Core."},
+  melt_critmass:{f:"melt",type:"permanent",cost:3,atk:0,hp:4,cm:true,txt:"Critical Mass. End of your turn: deal its charge to the enemy Core (1, +1 each time you play an Overheat unit)."},
+  melt_overcharge:{f:"melt",type:"script",cost:3,fx:"overcharge",val:4,target:"any",txt:"Overcharge: deal 4 to any unit or Core, then a friendly unit gets +2 ATK."},
   bas_warden:{f:"bas",type:"program",cost:4,atk:2,hp:5,guard:true,deploy:"gainCore3",txt:"Aegis Warden. GUARD. Deploy: gain 3 Core."},
   zd_op:{f:"zd",type:"program",cost:5,atk:5,hp:4,stealth:true,deploy:"draw1",txt:"Shadow Operative. STEALTH. Deploy: draw a card."},
-  sng_arch:{f:"sng",type:"program",cost:5,atk:4,hp:4,deploy:"scaleCompile",txt:"Architect AI. Deploy: +1/+1 per 3 Compile."},
 
   /* permanents (artifacts / locations) */
   perm_capbank:{f:"n",type:"permanent",cost:3,atk:0,hp:3,start:"capPlus1",txt:"Capacitor Bank. Start: +1⚡ to your Capacitor."},
@@ -471,7 +493,6 @@ const DB={
   melt_reactor:{f:"melt",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"coreDmg2",cd:1,uses:3},txt:"Reactor Breach. LOCATION · Activate: 2 to enemy Core. 3 uses."},
   bas_shield:{f:"bas",type:"permanent",cost:4,atk:0,hp:6,start:"coreEng2",txt:"Shield Generator. Start: gain 2 Core."},
   zd_relay:{f:"zd",type:"permanent",cost:3,atk:0,hp:3,loc:{fx:"draw1",cd:1,uses:4},txt:"Data Siphon. LOCATION · Activate: draw a card. 4 uses."},
-  sng_fusion:{f:"sng",type:"permanent",cost:4,atk:0,hp:4,start:"fusionEng",txt:"Fusion Core. Start: +2⚡ pool, +1 Compile."},
 
   /* RENEGADES */
   ren_thrall:{f:"ren",type:"program",cost:1,atk:1,hp:1,death:"martyrBank",txt:"Thrall. Death: bank 1⚡."},
@@ -479,11 +500,15 @@ const DB={
   ren_butcher:{f:"ren",type:"program",cost:3,atk:3,hp:3,death:"martyrDraw",txt:"Butcher. Death: draw a card."},
   ren_revenant:{f:"ren",type:"program",cost:4,atk:4,hp:3,death:"martyrSpawn",txt:"Revenant. Death: summon a 2/2 Ghoul."},
   ren_warlord:{f:"ren",type:"program",cost:5,atk:4,hp:5,vendetta:true,txt:"Vendetta Warlord. +1 ATK whenever a friendly unit dies."},
-  ren_ghoul:{f:"ren",type:"program",cost:2,atk:2,hp:2,txt:"Ghoul token."},
+  ren_ghoul:{f:"ren",type:"program",cost:2,atk:2,hp:2,ghoul:true,txt:"Ghoul token."},
   ren_grave:{f:"ren",type:"permanent",cost:3,atk:0,hp:4,harvest:true,txt:"Mass Grave. When a friendly unit dies, +1⚡ to your Capacitor."},
   ren_sacrifice:{f:"ren",type:"script",cost:1,fx:"sacrifice",target:"friendly",txt:"Ritual Sacrifice: destroy a friendly unit, draw 2."},
   ren_reanimate:{f:"ren",type:"script",cost:3,fx:"reanimate",target:"none",txt:"Reanimate: summon the last creature that died for you."},
   ren_plague:{f:"ren",type:"script",cost:4,fx:"empEnemy",val:2,target:"none",txt:"Plague: deal 2 to all enemy units."},
+  ren_execute:{f:"ren",type:"script",cost:3,fx:"execute",target:"friendly",txt:"Execute: sacrifice a friendly unit to destroy 2 random enemy units."},
+  ren_curse_ghouls:{f:"ren",type:"script",cost:3,fx:"curseGhouls",target:"none",curse:true,name:"Curse: Ghouls",txt:"Summon four Ghouls; all your Ghouls — now and later — get +2/+2."},
+  ren_curse_plague:{f:"ren",type:"script",cost:3,fx:"cursePlague",target:"none",curse:true,name:"Curse: Plagues",txt:"Deal 2 to all enemy units and the enemy Core; each surviving enemy unit becomes a 2/2 Ghoul."},
+  ren_curse_bloodmoon:{f:"ren",type:"script",cost:3,fx:"curseBloodmoon",target:"none",curse:true,name:"Curse: Bloodmoon",txt:"Deal 1 to the enemy Core for each unit that has died this game."},
 
   /* MECHS */
   mech_scrapling:{f:"mech",type:"program",cost:1,atk:1,hp:1,mech:true,txt:"Scrapling. MECH."},
@@ -516,6 +541,8 @@ const DB={
   carn_stage:{f:"carn",type:"script",cost:1,fx:"weaken",val:3,target:"enemyUnit",txt:"Stage Fright: an enemy unit loses 3 ATK."},
   carn_funhouse:{f:"carn",type:"script",cost:3,fx:"swapAll",target:"none",txt:"Funhouse: swap ATK and HP of ALL units."},
   carn_show:{f:"carn",type:"script",cost:2,fx:"buff",val:2,target:"friendly",txt:"Showstopper: give a friendly unit +2/+2."},
+  carn_magick:{f:"carn",type:"script",cost:3,fx:"magicktrick",target:"unit",txt:"Magick Trick: deal damage to the enemy Core equal to a creature ATK, and gain Core equal to its HP."},
+  carn_wobbly:{f:"carn",type:"script",cost:2,fx:"wobbly",target:"unit",txt:"Wobbly Mirror: swap a creature ATK and HP. If it is yours, also +2/+2; if it is an enemy, also -2/-2."},
   /* ===== DEMONS ===== */
   dem_imp:{f:"dem",type:"program",cost:1,atk:1,hp:1,ascendOnAttack:true,txt:"Imp. Ascend: becomes a 4/4 Demon after it attacks."},
   dem_whelp:{f:"dem",type:"program",cost:1,atk:2,hp:1,ascendOnAttack:true,txt:"Hellwhelp. Ascend on attack \u2014 becomes a 4/4 Demon."},
@@ -530,6 +557,8 @@ const DB={
   dem_plate:{f:"dem",type:"script",cost:1,fx:"grant",kw:"armor",val:2,target:"friendly",txt:"Infernal Plate: give a friendly unit Armor 2."},
   dem_fury:{f:"dem",type:"script",cost:1,fx:"grant",kw:"overheat",target:"friendly",txt:"Demonic Fury: give a friendly unit Overheat (it can attack now)."},
   dem_demon:{f:"dem",type:"program",cost:0,atk:4,hp:4,demon:true,txt:"Demon. A 4/4 horror."},
+  dem_hellfire:{f:"dem",type:"script",cost:3,fx:"hellfire",target:"none",txt:"Hellfire: deal 2 to the enemy Core, plus 2 for each time one of your Devils has Ascended this game."},
+  dem_brimstone:{f:"dem",type:"script",cost:3,fx:"brimstone",val:3,target:"enemyUnit",txt:"Brimstone: deal 3 to an enemy unit; if you control a Demon, deal 3 to all enemy units."},
 
   /* ===== CULTISTS ===== */
   cult_acolyte:{f:"cult",type:"program",cost:1,atk:1,hp:2,deploy:"ritual1",txt:"Acolyte. Deploy: +1 Ritual."},
@@ -542,6 +571,8 @@ const DB={
   cult_chant:{f:"cult",type:"script",cost:1,fx:"ritual",val:1,target:"none",txt:"Chant: +1 Ritual."},
   cult_rite:{f:"cult",type:"script",cost:2,fx:"ritual",val:2,target:"none",txt:"Blood Rite: +2 Ritual."},
   cult_offering:{f:"cult",type:"script",cost:1,fx:"sacRitual",target:"friendly",txt:"Offering: destroy a friendly unit, +2 Ritual, draw a card."},
+  cult_void:{f:"cult",type:"script",cost:3,fx:"invokevoid",target:"none",txt:"Invoke the Void: deal 2 to the enemy Core for each Ritual you have completed this game."},
+  cult_hex:{f:"cult",type:"script",cost:2,fx:"hex",val:3,target:"enemyUnit",txt:"Hex: deal 3 to an enemy unit and conduct +1 Ritual; +1 more Ritual if it dies."},
 
   /* ===== PROPHETS ===== */
   prph_acolyte:{f:"prph",type:"program",cost:2,atk:2,hp:2,deploy:"minorRead",txt:"Acolyte. Deploy: add a Minor Arcana to your hand."},
@@ -553,6 +584,18 @@ const DB={
   prph_spirit:{f:"prph",type:"program",cost:0,atk:4,hp:4,txt:"Spirit. A summoned 4/4."},
   prph_tarot:{f:"prph",type:"script",cost:1,fx:"drawArc",tier:"minor",target:"none",txt:"Tarot Reading: add a Minor Arcana to your hand."},
   prph_vision:{f:"prph",type:"script",cost:2,fx:"drawArc",tier:"major",target:"none",txt:"Grand Vision: add a Major Arcana to your hand."},
+  prph_warden:{f:"prph",type:"program",cost:4,atk:3,hp:3,guard:true,arcanaGrow:true,txt:"Arcane Templar. Guard. Whenever you play an Arcana, this gets +1/+1."},
+  /* ===== SINGULARITY (Void Core, dual base -> Infused) ===== */
+  sng_seed:{f:"sng",type:"program",cost:1,atk:1,hp:2,vcost:3,vatk:3,vhp:3,deploy:"sngSeed",txt:"Void Seed. Deploy: +1 Compile. Infused (3): 3/3, Deploy: 2 to all enemy units."},
+  sng_sprite:{f:"sng",type:"program",cost:1,atk:1,hp:1,vcost:2,vatk:2,vhp:2,deploy:"sngSprite",txt:"Null Sprite. Deploy: +2⚡ pool, +1 Compile. Infused (2): 2/2, also 1 to all enemy units."},
+  sng_sentinel:{f:"sng",type:"program",cost:2,atk:1,hp:4,guard:true,vcost:4,vatk:3,vhp:7,txt:"Sentinel Process. Guard. Infused (4): 3/7 Guard."},
+  sng_monolith:{f:"sng",type:"program",cost:3,atk:0,hp:8,guard:true,vcost:5,vatk:0,vhp:13,txt:"Void Monolith. Guard wall. Infused (5): 0/13 Guard."},
+  sng_overmind:{f:"sng",type:"program",cost:5,atk:4,hp:5,vcost:7,vatk:7,vhp:8,deploy:"sngOvermind",txt:"Overmind. Infused (7): 7/8, Deploy: 2 to all enemy units."},
+  sng_honeypot:{f:"sng",type:"permanent",cost:3,atk:0,hp:4,honeypot:true,txt:"Honeypot. When an enemy plays a unit, deal 1 to it (2 while Infused)."},
+  sng_quarantine:{f:"sng",type:"permanent",cost:3,atk:0,hp:4,start:"quarantine",txt:"Quarantine Field. Start of your turn: deal 1 to all enemy units (2 while Infused)."},
+  sng_recompile:{f:"sng",type:"script",cost:1,vcost:3,fx:"sngRecompile",target:"none",txt:"Recompile: draw a card and +1 Compile. Infused (3): draw 2."},
+  sng_firewall:{f:"sng",type:"script",cost:3,vcost:5,fx:"sngFirewall",val:2,target:"enemyUnit",txt:"Firewall: deal 2 to an enemy unit. Infused (5): 3 to it and 3 to all enemy units."},
+  sng_purge:{f:"sng",type:"script",cost:4,vcost:6,fx:"sngPurge",val:3,target:"none",txt:"Void Purge: deal 3 to all enemy units. Infused (6): 5 to all and 3 to the enemy Core."},
 
   /* ===== ARCANA (drawn to hand, 0-cost) ===== */
   arc_cups:{f:"prph",type:"script",cost:0,fx:"gainCore",val:3,target:"none",txt:"The Cups \u00b7 Minor: gain 3 Core."},
@@ -569,18 +612,18 @@ const DB={
 };
 
 const DECKS={
-  syn:[["syn_broker",3],["syn_shark",3],["syn_enf",2],["syn_golem",2],["syn_boss",2],["syn_vault",2],["syn_wiretap",1],["syn_market",2],["syn_extort",2],["syn_insider",2],["syn_laundromat",1],["perm_server",1],["n_spike",2],["n_surge",1],["n_tesla",1]],
-  swm:[["swm_node",6],["swm_master",4],["swm_lord",3],["swm_queen",2],["swm_surge",2],["swm_overload",2],["swm_bay",1],["perm_capbank",1],["swm_ddos",2],["swm_infest",2],["n_bruiser",1],["n_surge",1],["n_tesla",1]],
-  melt:[["melt_imp",5],["melt_hound",4],["melt_core",2],["melt_drake",2],["melt_lance",3],["melt_spike",2],["melt_inject",2],["melt_reactor",1],["perm_capbank",1],["n_bruiser",2],["n_surge",1],["n_tesla",1]],
-  bas:[["bas_wall",3],["bas_sentinel",3],["bas_turret",2],["bas_warden",2],["bas_main",1],["bas_rally",2],["bas_tariff",2],["bas_reinforce",2],["bas_patch",2],["bas_shield",1],["perm_server",1],["n_spike",2],["n_surge",1],["n_tesla",1]],
-  zd:[["zd_root",3],["zd_spy",3],["zd_phantom",3],["zd_back",2],["zd_assassin",2],["zd_op",2],["zd_exploit",3],["zd_virus",2],["zd_blades",2],["zd_relay",1],["n_surge",1],["n_tesla",1]],
-  sng:[["sng_plant",3],["sng_archive",3],["sng_net",3],["sng_arch",2],["sng_engine",1],["sng_sub",5],["sng_quantum",2],["sng_recur",2],["sng_fusion",1],["n_surge",1],["n_tesla",1]],
-  ren:[["ren_thrall",4],["ren_zealot",4],["ren_butcher",4],["ren_revenant",2],["ren_warlord",2],["ren_grave",1],["ren_sacrifice",2],["ren_reanimate",3],["ren_plague",2],["n_surge",1],["n_tesla",1]],
-  mech:[["mech_assembler",2],["mech_gunner",2],["mech_bulwark",2],["mech_techie",3],["mech_frame",3],["mech_walker",3],["mech_tank",2],["mech_titan",1],["mech_reactor",2],["mech_forge",2],["mech_blueprint",2]],
-  carn:[["carn_acrobat",4],["carn_knife",4],["carn_mirror",2],["carn_strongman",2],["carn_clown",3],["carn_ringmaster",1],["carn_funhouse",1],["carn_show",3],["carn_shrink",2],["carn_bigtop",1],["carn_stage",2],["n_surge",1],["n_tesla",1]],
-  dem:[["dem_imp",4],["dem_whelp",3],["dem_cultling",3],["dem_acolyte",3],["dem_fiend",2],["dem_brander",2],["dem_overlord",1],["dem_champion",1],["dem_possess",2],["dem_brand",2],["dem_plate",1],["dem_fury",2],["n_surge",1],["n_tesla",1]],
-  cult:[["cult_acolyte",4],["cult_zealot",4],["cult_martyr",3],["cult_summoner",2],["cult_priest",2],["cult_brute",3],["cult_chant",2],["cult_rite",2],["cult_offering",2],["n_surge",1],["n_tesla",1]],
-  prph:[["prph_acolyte",4],["prph_oracle",3],["prph_seer",3],["prph_zealot",3],["prph_templar",2],["prph_disciple",4],["prph_tarot",3],["prph_vision",1],["n_surge",1],["n_tesla",1]],
+  syn:[["syn_broker",3],["syn_shark",3],["syn_enf",3],["syn_golem",2],["syn_boss",2],["syn_vault",3],["syn_wiretap",1],["syn_market",3],["syn_extort",2],["syn_insider",2],["syn_laundromat",1],["syn_shakedown",2],["syn_cashout",1],["syn_margin",1],["syn_kingpin",1]],
+  swm:[["swm_lord",3],["swm_queen",2],["botnet_relay",2],["hive_cluster",2],["proxy_net",2],["load_balancer",2],["recovery_bay",2],["swm_bay",1],["swm_ddos",5],["swm_infest",3],["swm_overload",2],["swm_surge",2],["swm_targeted",2]],
+  melt:[["melt_imp",6],["melt_hound",5],["melt_core",2],["melt_drake",2],["melt_lance",4],["melt_spike",3],["melt_inject",2],["melt_reactor",1],["melt_brute",2],["melt_critmass",1],["melt_overcharge",2]],
+  bas:[["bas_wall",3],["bas_sentinel",4],["bas_turret",3],["bas_warden",2],["bas_main",1],["bas_rally",3],["bas_tariff",2],["bas_reinforce",3],["bas_patch",3],["bas_shield",1],["bas_strike",3],["bas_retaliate",1],["bas_maint",1]],
+  zd:[["zd_root",4],["zd_spy",4],["zd_phantom",4],["zd_back",2],["zd_assassin",2],["zd_op",2],["zd_exploit",4],["zd_virus",2],["zd_blades",3],["zd_relay",1],["zd_backstab",1],["zd_backdoor",1]],
+  sng:[["sng_seed",5],["sng_sprite",4],["sng_sentinel",3],["sng_monolith",2],["sng_overmind",2],["sng_honeypot",2],["sng_quarantine",2],["sng_recompile",5],["sng_firewall",3],["sng_purge",2]],
+  ren:[["ren_thrall",5],["ren_zealot",5],["ren_butcher",4],["ren_revenant",2],["ren_warlord",2],["ren_grave",1],["ren_sacrifice",3],["ren_reanimate",3],["ren_plague",3],["ren_execute",2]],
+  mech:[["mech_assembler",3],["mech_gunner",3],["mech_bulwark",3],["mech_techie",3],["mech_frame",4],["mech_walker",4],["mech_tank",2],["mech_titan",1],["mech_reactor",2],["mech_forge",2],["mech_blueprint",3]],
+  carn:[["carn_acrobat",5],["carn_knife",5],["carn_mirror",2],["carn_strongman",2],["carn_clown",4],["carn_ringmaster",1],["carn_funhouse",1],["carn_show",3],["carn_shrink",2],["carn_bigtop",1],["carn_stage",2],["carn_magick",1],["carn_wobbly",1]],
+  dem:[["dem_imp",5],["dem_whelp",4],["dem_cultling",3],["dem_acolyte",3],["dem_fiend",2],["dem_brander",2],["dem_overlord",1],["dem_champion",1],["dem_possess",2],["dem_brand",2],["dem_plate",1],["dem_fury",2],["dem_hellfire",1],["dem_brimstone",1]],
+  cult:[["cult_acolyte",5],["cult_zealot",5],["cult_martyr",4],["cult_summoner",2],["cult_priest",2],["cult_brute",4],["cult_chant",2],["cult_rite",2],["cult_offering",2],["cult_void",1],["cult_hex",1]],
+  prph:[["prph_acolyte",5],["prph_oracle",4],["prph_seer",4],["prph_zealot",3],["prph_templar",2],["prph_disciple",5],["prph_tarot",4],["prph_vision",1],["prph_warden",2]],
 };
 const ARCANA_MINOR=["arc_cups","arc_wands","arc_swords","arc_pentacles","arc_star","arc_strength"];
 const ARCANA_MAJOR=["arc_tower","arc_sun","arc_death","arc_wheel","arc_judgement"];
@@ -590,7 +633,7 @@ const ARCANA_MAJOR=["arc_tower","arc_sun","arc_death","arc_wheel","arc_judgement
 /* ===================== KEYWORD / MECHANIC GLOSSARY ===================== */
 const KEYWORDS=[
   {n:"Guard",d:"Enemies must attack this before your Core or your other units."},
-  {n:"Leech",d:"When this attacks, bank 1⚡ into your Capacitor (or steal 1 from the enemy's)."},
+  {n:"Launder",d:"When this attacks, bank 1⚡ into your Capacitor (or steal 1 from the enemy's)."},
   {n:"Overheat",d:"Can attack the turn it's played (no summoning sickness), but loses 1 HP at the start of each of your turns."},
   {n:"Stealth",d:"Can't be attacked or targeted until it attacks — and it can strike anyone, ignoring Guards."},
   {n:"Stun",d:"A stunned unit can't attack or act on its next turn."},
@@ -640,12 +683,12 @@ const POWERS={
   zd:{core:{name:"Cloak",cost:1,target:"friendly",fx:"cloak",txt:"Give a friendly unit Stealth."},
        draw:{name:"Datamine",cost:2,target:"none",fx:"datamine",txt:"Draw a card; draw 2 if you control a Stealth unit."},
        ult:{name:"Total Breach",cost:0,target:"none",fx:"ult_breach",txt:"Deal 6 directly to the enemy Core."}},
-  sng:{core:{name:"Overclock",cost:1,target:"none",fx:"overclock",txt:"+3⚡ to the shared pool and +1 Compile."},
-       draw:{name:"Recompile",cost:2,target:"none",fx:"recompile",txt:"Draw a card and +1 Compile."},
-       ult:{name:"Singularity",cost:0,target:"none",fx:"ult_singularity",txt:"+8⚡ to your Capacitor, draw 2, +3 Compile."}},
+  sng:{core:{name:"Compile",cost:1,target:"none",fx:"sngCompile",txt:"+1 Compile toward the Void Core.",vname:"Void Pulse",vcost:2,vtxt:"Deal 1 to all enemy units."},
+       draw:{name:"Parse",cost:2,target:"none",fx:"sngParseP",txt:"Draw a card and +1 Compile.",vname:"Datastream",vcost:2,vtxt:"Draw 2 cards."},
+       ult:{name:"Initialize",cost:0,target:"none",fx:"sngInit",txt:"+3 Compile and +3⚡ to the pool.",vname:"System Purge",vtxt:"Deal 4 to all enemy units."}},
   ren:{core:{name:"Blood Pact",cost:1,target:"friendly",fx:"bloodpact",txt:"Destroy a friendly unit to raise a 2/2 Ghoul."},
        draw:{name:"Grave Robbing",cost:2,target:"none",fx:"graverob",txt:"Draw a card; draw 2 if one of your units has died."},
-       ult:{name:"Open the Crypt",cost:0,target:"none",fx:"ult_crypt",txt:"Summon up to 3 of your fallen creatures (or Ghouls)."}},
+       ult:{name:"Conjure Curse",cost:0,target:"none",fx:"ult_curse",txt:"Add a Curse to your hand — escalating each use: Ghouls, then Plagues, then Bloodmoon."}},
   mech:{core:{name:"Assemble",cost:1,target:"none",fx:"assembleScrapling",txt:"Summon a 1/1 Scrapling."},
        draw:{name:"Salvage",cost:2,target:"none",fx:"salvage",txt:"Draw a card; draw 2 if you have 4+ Scrap."},
        ult:{name:"Iron Colossus",cost:0,target:"none",fx:"ult_colossus",txt:"Summon the Iron Colossus: a 0/0 that gains +1/+1 per 2 Scrap, plus every Framework bonus you control."}},
@@ -685,9 +728,9 @@ function buildDeck(fac){
   for(let i=d.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]];}return d;
 }
 function mkUnit(id){const c=DB[id];return{uid:uidc++,id,name:c.name||cardName(id),atk:c.atk,hp:c.hp,maxHp:c.hp,
-  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,coreOnAttack:!!c.coreOnAttack,frame:c.frame||null,
+  armor:c.armor||0,guard:!!c.guard,leech:!!c.leech,overheat:!!c.overheat,stealth:!!c.stealth,backdoor:!!c.backdoor,ascendOnAttack:!!c.ascendOnAttack,ascendOnDeath:!!c.ascendOnDeath,demon:!!c.demon,bankOnHit:!!c.bankOnHit,bankEnemyPlay:!!c.bankEnemyPlay,rally:!!c.rally,coreOnAttack:!!c.coreOnAttack,frame:c.frame||null,drone:!!c.drone,aura:c.aura||null,recovery:!!c.recovery,charges:0,cm:!!c.cm,cmStacks:1,retaliate:!!c.retaliate,ghoul:!!c.ghoul,arcanaGrow:!!c.arcanaGrow,honeypot:!!c.honeypot,
   start:c.start,death:c.death,deploy:c.deploy,type:c.type,loc:c.loc,cd:0,uses:c.loc?c.loc.uses:0,mech:!!c.mech,harvest:!!c.harvest,vendetta:!!c.vendetta,ready:false};}
-function cardName(id){return DB[id].txt.split(/[.:]/)[0];}
+function cardName(id){return DB[id].name||DB[id].txt.split(/[.:]/)[0];}
 
 /* ===================== CARD ART (inline SVG glyphs) ===================== */
 const ART={
@@ -788,6 +831,46 @@ const ART={
   carn_funhouse:'<path d="M10 26V14l7-8 7 8 7-8 7 8v12z"/><path d="M17 6v20 M31 6v20"/>',
   carn_show:'<path d="M24 6l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="currentColor"/>',
   syn_vault:'<rect x="12" y="9" width="24" height="20" rx="2"/><circle cx="24" cy="19" r="5"/><path d="M24 14v5l3 2"/>',
+  syn_margin:'<path d="M24 9v18 M13 13h22"/><path d="M13 13l-3 6a4 3 0 008 0z M35 13l-3 6a4 3 0 008 0z"/>',
+  syn_cashout:'<path d="M18 14h12l3 7c2 5-2 8-9 8s-11-3-9-8z"/><path d="M21 14l3-4 3 4"/><path d="M24 20v5 M21 22h6"/>',
+  syn_kingpin:'<path d="M13 16l5 4 6-8 6 8 5-4-2 12H15z"/><circle cx="24" cy="26" r="1.5" fill="currentColor"/>',
+  syn_shakedown:'<path d="M12 22l6-2 4 3 8-2"/><path d="M30 21l4-1-1 4 M18 20l-2-4 4 1"/><circle cx="32" cy="26" r="2"/>',
+  swm_mega:'<circle cx="24" cy="22" r="9"/><path d="M24 8v5 M16 12l3 4 M32 12l-3 4 M20 22h.01 M28 22h.01 M19 26q5 4 10 0"/>',
+  botnet_relay:'<circle cx="24" cy="20" r="4"/><circle cx="13" cy="14" r="2"/><circle cx="35" cy="14" r="2"/><circle cx="13" cy="27" r="2"/><circle cx="35" cy="27" r="2"/><path d="M24 20l-11-6 M24 20l11-6 M24 20l-11 7 M24 20l11 7"/>',
+  hive_cluster:'<path d="M24 9l9 5v9l-9 5-9-5v-9z"/><path d="M24 14l5 3v6l-5 3-5-3v-6z"/>',
+  proxy_net:'<path d="M24 9l11 4v7c0 7-5 11-11 13-6-2-11-6-11-13v-7z"/><path d="M14 18h20 M24 11v16" opacity=".6"/>',
+  load_balancer:'<rect x="12" y="22" width="24" height="4" rx="2"/><path d="M24 22V12 M18 16l6-5 6 5"/><circle cx="16" cy="24" r="1.5" fill="currentColor"/><circle cx="32" cy="24" r="1.5" fill="currentColor"/>',
+  recovery_bay:'<path d="M14 16h20v10a4 4 0 01-4 4H18a4 4 0 01-4-4z"/><path d="M24 13v8 M20 17h8"/>',
+  swm_targeted:'<circle cx="24" cy="20" r="10"/><circle cx="24" cy="20" r="5"/><path d="M24 6v6 M24 28v6 M10 20h6 M32 20h6"/><circle cx="24" cy="20" r="1.5" fill="currentColor"/>',
+  melt_brute:'<path d="M16 12l-2-4 4 2 M32 12l2-4-4 2"/><path d="M24 11c6 0 10 5 10 11s-5 6-10 6-10 0-10-6 4-11 10-11z"/><path d="M20 20h.01 M28 20h.01 M20 25q4 3 8 0"/>',
+  melt_critmass:'<circle cx="24" cy="20" r="6"/><path d="M24 20l5-9 M24 20l5 9 M24 20l-10 0"/><circle cx="24" cy="20" r="10" stroke-dasharray="2 3"/>',
+  melt_overcharge:'<path d="M26 7l-12 16h8l-2 12 14-18h-8z" fill="currentColor"/>',
+  bas_strike:'<path d="M30 8L14 24 M12 26l4-2 2 2-2 2z M28 6l6 0 0 6 M26 12l8-8"/>',
+  bas_retaliate:'<path d="M24 8l11 4v7c0 7-5 11-11 13-6-2-11-6-11-13v-7z"/><path d="M19 19l4 4 8-8"/>',
+  bas_maint:'<circle cx="24" cy="20" r="6"/><path d="M24 11v3 M24 26v3 M15 20h3 M30 20h3 M18 14l2 2 M30 26l-2-2 M30 14l-2 2 M18 26l2-2"/>',
+  zd_backstab:'<path d="M28 9L16 26 M14 28l3-1 1 3-3 1z M26 7l5-1-1 5"/><path d="M20 18l-6 2"/>',
+  zd_backdoor:'<rect x="15" y="11" width="18" height="18" rx="2"/><path d="M15 11l-4 4v14h4 M28 19h.01"/>',
+  ren_execute:'<path d="M30 8l4 4-10 10 M24 22l-10 10 M14 30l-2 4 4-2 M30 8l-6 6"/><path d="M30 8a4 4 0 014 4"/>',
+  ren_curse_ghouls:'<path d="M14 18a5 5 0 0110 0v6l-2-1-2 1-1-1-2 1-1-1-2 1z"/><path d="M30 20a4 4 0 018 0v5l-2-1-2 1-2-1-2 1z"/>',
+  ren_curse_plague:'<circle cx="24" cy="18" r="8"/><circle cx="21" cy="16" r="1.4" fill="currentColor"/><circle cx="27" cy="16" r="1.4" fill="currentColor"/><path d="M20 24h8 M22 28v3 M26 28v3 M24 28v4"/>',
+  ren_curse_bloodmoon:'<path d="M24 8a12 12 0 100 24 9 9 0 010-24z"/><path d="M30 14l1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L27 16.3l2-.3z" stroke-width="1"/>',
+  carn_magick:'<path d="M14 30L30 14 M30 14l3-5-5 3"/><path d="M22 10l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="currentColor"/>',
+  carn_wobbly:'<ellipse cx="24" cy="20" rx="9" ry="11"/><path d="M18 16q6 4 12 0 M18 24q6-4 12 0"/>',
+  dem_hellfire:'<path d="M24 6c4 6 7 8 7 13a7 7 0 01-14 0c0-3 1-5 3-7 0 3 2 4 4 4-2-5 0-9 0-13z" fill="currentColor"/>',
+  dem_brimstone:'<path d="M16 10l3 5 M32 10l-3 5 M24 8v6"/><path d="M24 14c5 0 8 4 8 9a8 8 0 01-16 0c0-5 3-9 8-9z"/><path d="M20 22h.01 M28 22h.01"/>',
+  cult_void:'<circle cx="24" cy="20" r="10"/><circle cx="24" cy="20" r="5" fill="currentColor"/><path d="M24 6v4 M24 30v4 M10 20h4 M34 20h4"/>',
+  cult_hex:'<path d="M24 8l9 5v9l-9 5-9-5v-9z"/><path d="M20 17l8 8 M28 17l-8 8"/>',
+  prph_warden:'<path d="M24 7l10 4v7c0 7-4 11-10 13-6-2-10-6-10-13v-7z"/><path d="M24 12l2 4 4 .5-3 3 .7 4-3.7-2-3.7 2 .7-4-3-3 4-.5z" stroke-width="1"/>',
+  sng_seed:'<circle cx="24" cy="20" r="4"/><path d="M24 16c0-4-3-7-3-7 4 1 6 3 6 7 M24 24c0 4 3 7 3 7-4-1-6-3-6-7"/>',
+  sng_sprite:'<path d="M24 9l3 6 6 1-5 4 2 6-6-3-6 3 2-6-5-4 6-1z"/>',
+  sng_sentinel:'<rect x="15" y="12" width="18" height="16" rx="2"/><circle cx="24" cy="20" r="4"/><circle cx="24" cy="20" r="1.5" fill="currentColor"/>',
+  sng_monolith:'<rect x="17" y="8" width="14" height="24" rx="1"/><path d="M21 13h6 M21 18h6 M21 23h6"/>',
+  sng_overmind:'<circle cx="24" cy="20" r="8"/><path d="M24 12V6 M24 28v6 M16 20h-6 M32 20h6 M18 14l-4-4 M30 14l4-4 M18 26l-4 4 M30 26l4 4"/><circle cx="24" cy="20" r="2" fill="currentColor"/>',
+  sng_honeypot:'<path d="M16 14h16l-2 6H18z M18 20l-1 8h14l-1-8"/><path d="M22 24h.01 M26 24h.01"/>',
+  sng_quarantine:'<circle cx="24" cy="20" r="10" stroke-dasharray="3 3"/><path d="M18 14l12 12 M30 14L18 26"/>',
+  sng_recompile:'<path d="M32 16a9 9 0 10.5 6"/><path d="M32 10v6h-6"/>',
+  sng_firewall:'<rect x="13" y="14" width="22" height="12"/><path d="M13 18h22 M13 22h22 M18 14v4 M26 14v4 M22 18v4 M30 18v4"/>',
+  sng_purge:'<circle cx="24" cy="20" r="9"/><path d="M24 11v18 M15 20h18 M18 14l12 12 M30 14L18 26"/>',
   syn_wiretap:'<path d="M15 27a9 9 0 019-13 7 7 0 017 7"/><circle cx="15" cy="27" r="2"/><path d="M31 11l4-3 M33 16l5-2"/>',
   bas_rally:'<path d="M15 30V8 M15 9h15l-3 4 3 4H15"/><path d="M30 23l3 3 3-3"/>',
   zd_blades:'<path d="M14 30L29 13 M29 13l4-2-2 4 M14 30l-2 4 4-2"/><path d="M34 30L19 13 M19 13l-4-2 2 4 M34 30l2 4-4-2"/>',
@@ -1008,9 +1091,9 @@ function maybeStartRematch(){
 <script>
 /* OVERCLOCK — engine.js  (auto-split; loaded as a plain <script>, shares global scope) */
 function newGame(meFac,aiFac){
-  S={pool:0,turn:"me",tick:0,over:false,log:[],
-     me:{fac:meFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,coreGainedTurn:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(meFac),hand:[],board:[]},
-     ai:{fac:aiFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,coreGainedTurn:0,permBuff:{atk:0,hp:0},ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(aiFac),hand:[],board:[]}};
+  S={pool:0,turn:"me",tick:0,over:false,deaths:0,log:[],
+     me:{fac:meFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,coreGainedTurn:0,permBuff:{atk:0,hp:0},ghoulBuff:{atk:0,hp:0},curseUses:0,ascends:0,ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(meFac),hand:[],board:[]},
+     ai:{fac:aiFac,core:25,cap:0,compile:0,tax:0,taxNext:0,used:{core:false,draw:false,bank:false},charge:0,chargeMax:5,scrap:0,coreGainedTurn:0,permBuff:{atk:0,hp:0},ghoulBuff:{atk:0,hp:0},curseUses:0,ascends:0,ritual:0,summons:0,omenMajor:false,grave:[],deck:buildDeck(aiFac),hand:[],board:[]}};
   for(let i=0;i<4;i++){draw("me");draw("ai");}draw("ai");
   selectedUnit=null;pendingScript=null;busy=false;recentAct=null;if(typeof resetAnim==="function")resetAnim();
   $("overlay").classList.remove("show");$("log").innerHTML="";
@@ -1023,7 +1106,9 @@ const HAND_MAX=10;
 function draw(p){const pl=S[p];if(pl.deck.length===0){pl.core-=1;log("sys",(p==="me"?"You":"Enemy")+" decked out: -1 Core");return;}const c=pl.deck.pop();if(pl.hand.length>=HAND_MAX){log("sys",(p==="me"?"You":"Enemy")+" hand full ("+HAND_MAX+") — "+cardName(c)+" burned");return;}pl.hand.push(c);}
 
 /* ===================== HELPERS ===================== */
-function effCost(p,id){const d=DB[id];let base=d.cost;
+function addCompile(p,n){S[p].compile=(S[p].compile||0)+n;if(!S[p].void&&S[p].fac==="sng"&&(S[p].compile||0)>=10){S[p].void=true;log("sys",(p==="me"?"You":"Enemy")+" — VOID CORE ONLINE · all systems Infused");}}
+function powCost(seat,slot){var pw=powerDef(seat,slot);return (pw.vcost!=null&&S[seat]&&S[seat].void)?pw.vcost:pw.cost;}
+function effCost(p,id){const d=DB[id];let base=(d.vcost!=null&&S[p]&&S[p].void)?d.vcost:d.cost;
   if(d.costCompile)base=Math.max(d.costCompile.min,base-Math.floor((S[p].compile||0)/d.costCompile.per));
   if(d.costScrap)base=Math.max(d.costScrap.min,base-Math.floor((S[p].scrap||0)/d.costScrap.per));
   return Math.max(0,base+(S[p].tax||0));}
@@ -1031,18 +1116,21 @@ function spendable(p){return S.pool+S[p].cap;}
 function canPlay(p,id){const cc=DB[id].capCost||0;if(S[p].cap<cc)return false;return (S.pool+(S[p].cap-cc))>=effCost(p,id);}
 function pay(p,id){const cc=DB[id].capCost||0;if(cc)S[p].cap-=cc;let amt=effCost(p,id);const fromPool=Math.min(S.pool,amt);S.pool-=fromPool;S[p].cap-=(amt-fromPool);}
 function bankTo(p,n){const mv=Math.min(n,S.pool);S.pool-=mv;S[p].cap+=mv;return mv;}
-function hurt(u,amt){if(u.armor>0){const a=Math.min(u.armor,amt);u.armor-=a;amt-=a;}u.hp-=amt;}
-function makeToken(p,id){if(S[p].board.length>=7)return;const u=mkUnit(id);u.token=true;u.ready=false;applyPerm(p,u);S[p].board.push(u);}
-function summon(p,id){if(S[p].board.length>=7)return;const u=mkUnit(id);u.ready=false;applyPerm(p,u);S[p].board.push(u);}
+function hurt(u,amt){if(u.armor>0){const a=Math.min(u.armor,amt);u.armor-=a;amt-=a;if(a>0){var _p=(S.me.board.indexOf(u)>=0)?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(_p&&S[_p].board.some(function(x){return x.retaliate&&x.hp>0;})){var _o=(_p==="me"?"ai":"me");S[_o].core-=a;log("sys","Retaliation: "+a+" to "+(_o==="me"?"your":"enemy")+" Core");}}}u.hp-=amt;}
+function nUnits(p){return S[p].board.filter(function(u){return u.type!=="permanent";}).length;}
+function nPerms(p){return S[p].board.filter(function(u){return u.type==="permanent";}).length;}
+function canAdd(p,id){return (DB[id]&&DB[id].type==="permanent")?nPerms(p)<7:nUnits(p)<7;}
+function makeToken(p,id){if(!canAdd(p,id))return;const u=mkUnit(id);u.token=true;u.ready=false;applyPerm(p,u);S[p].board.push(u);}
+function summon(p,id){if(!canAdd(p,id))return;const u=mkUnit(id);u.ready=false;applyPerm(p,u);S[p].board.push(u);}
 function addCore(p,n){S[p].core+=n;if(n>0)S[p].coreGainedTurn=(S[p].coreGainedTurn||0)+n;if(n>0&&S[p].board.some(function(x){return x.rally&&x.hp>0;})){var t=S[p].board.filter(function(u){return u.type!=="permanent"&&u.hp>0;});if(t.length){var a=t[Math.floor(Math.random()*t.length)];a.atk+=2;log("sys","Rally: "+a.name+" +2 ATK");}}}
 function wiretap(p){var o=other(p);if(S[o].board.some(function(x){return x.bankEnemyPlay&&x.hp>0;})){S[o].cap+=1;log("sys","Wiretap: "+(o==="me"?"you":"enemy")+" bank 1⚡");}}
-function applyPerm(p,u){const b=S[p]&&S[p].permBuff;if(b&&(b.atk||b.hp)){u.atk+=b.atk;u.hp+=b.hp;u.maxHp+=b.hp;}}
-function transformDemon(u){u.atk=4;u.hp=4;u.maxHp=4;u.name="Demon";u.id="dem_demon";u.demon=true;const p=S.me.board.indexOf(u)>=0?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(p&&S[p].permBuff){u.atk+=S[p].permBuff.atk;u.hp+=S[p].permBuff.hp;u.maxHp+=S[p].permBuff.hp;}}
+function applyPerm(p,u){const b=S[p]&&S[p].permBuff;if(b&&(b.atk||b.hp)){u.atk+=b.atk;u.hp+=b.hp;u.maxHp+=b.hp;}if(u.drone&&S[p]&&S[p].board){if(S[p].board.some(function(x){return x.aura==="atk1";}))u.atk+=1;if(S[p].board.some(function(x){return x.aura==="hp1";})){u.hp+=1;u.maxHp+=1;}}if(u.ghoul&&S[p]&&S[p].ghoulBuff&&(S[p].ghoulBuff.atk||S[p].ghoulBuff.hp)){u.atk+=S[p].ghoulBuff.atk;u.hp+=S[p].ghoulBuff.hp;u.maxHp+=S[p].ghoulBuff.hp;}}
+function transformDemon(u){u.atk=4;u.hp=4;u.maxHp=4;u.name="Demon";u.id="dem_demon";u.demon=true;const p=S.me.board.indexOf(u)>=0?"me":(S.ai.board.indexOf(u)>=0?"ai":null);if(p&&S[p].permBuff){u.atk+=S[p].permBuff.atk;u.hp+=S[p].permBuff.hp;u.maxHp+=S[p].permBuff.hp;}if(p)S[p].ascends=(S[p].ascends||0)+1;}
 function queueHorror(p){const size=Math.min(10,2+(S[p].summons||0));S[p].summons=(S[p].summons||0)+1;(S._pend=S._pend||[]).push({p:p,size:size});}
 function conductRitual(p,n){S[p].ritual=(S[p].ritual||0)+n;while(S[p].ritual>=3){S[p].ritual-=3;queueHorror(p);}log("sys",(p==="me"?"You":"Enemy")+" Ritual "+S[p].ritual+"/3");}
 function queueToken(p,id){(S._pend=S._pend||[]).push({p:p,id:id});}
 function buildFramework(p,kind,deferred){if((S[p].scrap||0)<2){log("sys","Not enough Scrap for a Framework");return;}S[p].scrap-=2;if(deferred)queueToken(p,"fw_"+kind);else makeToken(p,"fw_"+kind);log("sys",(p==="me"?"You":"Enemy")+" build a "+kind+" Framework (-2 Scrap)");}
-function flushSummons(){if(!S._pend||!S._pend.length)return;const q=S._pend;S._pend=[];for(const it of q){if(S[it.p].board.length>=7)continue;if(it.id){makeToken(it.p,it.id);continue;}const u=mkUnit("cult_spawn");u.atk=it.size;u.hp=it.size;u.maxHp=it.size;u.token=true;u.ready=false;applyPerm(it.p,u);S[it.p].board.push(u);log("sys",(it.p==="me"?"You":"Enemy")+" summons a "+it.size+"/"+it.size+" Horror");}}
+function flushSummons(){if(!S._pend||!S._pend.length)return;const q=S._pend;S._pend=[];for(const it of q){if(it.id){makeToken(it.p,it.id);continue;}if(nUnits(it.p)>=7)continue;const u=mkUnit("cult_spawn");u.atk=it.size;u.hp=it.size;u.maxHp=it.size;u.token=true;u.ready=false;applyPerm(it.p,u);S[it.p].board.push(u);log("sys",(it.p==="me"?"You":"Enemy")+" summons a "+it.size+"/"+it.size+" Horror");}}
 function addArcana(p,tier){if(tier==="minor"&&S[p].omenMajor){tier="major";S[p].omenMajor=false;log("sys","Omen fulfilled — a Major Arcana appears!");}const pool=tier==="major"?ARCANA_MAJOR:ARCANA_MINOR;const id=pool[Math.random()*pool.length|0];if(S[p].hand.length>=HAND_MAX){log("sys",(p==="me"?"You":"Enemy")+" hand full — Arcana lost");return;}S[p].hand.push(id);log("sys",(p==="me"?"You":"Enemy")+" draws "+cardName(id));}
 
 function swapStats(u){const a=u.atk;u.atk=u.hp;u.hp=a;if(u.hp>u.maxHp)u.maxHp=u.hp;}
@@ -1050,10 +1138,12 @@ function swapStats(u){const a=u.atk;u.atk=u.hp;u.hp=a;if(u.hp>u.maxHp)u.maxHp=u.
 /* ===================== TURN FLOW ===================== */
 function genFor(){return Math.min(2+Math.floor(S.tick/2),9);}
 function startTurn(p){
+  {var _e=(p==="me"?"ai":"me");if(S&&S[_e]&&S[_e].board)S[_e].board.forEach(function(x){if(x.cm&&x.hp>0){S[p].core-=(x.cmStacks||1);log("sys",x.name+" reactor: "+(x.cmStacks||1)+" to "+(p==="me"?"your":"enemy")+" Core");}});}
   S.turn=p;S.tick++;
   S[p].tax=S[p].taxNext||0;S[p].taxNext=0;S[p].used={core:false,draw:false,bank:false};S[p].coreGainedTurn=0;S[p].charge=Math.min(S[p].chargeMax||5,(S[p].charge||0)+1);
   if(S[p].fac==="mech")S[p].scrap=(S[p].scrap||0)+1;
   const gen=genFor();S.pool+=gen;
+  if(S.me.void||S.ai.void)S.pool+=3;
   // start-of-turn triggers + overheat decay
   S[p].board.forEach(u=>{
     if(u.cd>0)u.cd--;
@@ -1066,6 +1156,10 @@ function startTurn(p){
     else if(u.start==="launderEng"){const m=bankTo(p,2);log("sys",u.name+" banks "+m+"⚡");}
     else if(u.start==="fusionEng"){S.pool+=2;S[p].compile=(S[p].compile||0)+1;log("sys",u.name+" +2⚡ pool, +1 Compile");}
     else if(u.start==="scrapEng"){S[p].scrap=(S[p].scrap||0)+1;S[p].cap+=1;log("sys",u.name+" +1 Scrap, +1⚡");}
+    else if(u.start==="marginCall"){const o=other(p);if((S[o].cap||0)<2){S[o].core-=3;log("sys",u.name+": 3 to "+(o==="me"?"your":"enemy")+" Core (Capacitor under 2)");}}
+    else if(u.start==="loadBalance"){if(nUnits(p)>=5){draw(p);log("sys",u.name+": draw (5+ units)");}}
+    else if(u.start==="quarantine"){var _qd=S[p].void?2:1;S[other(p)].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,_qd);});log("sys",u.name+": "+_qd+" to all enemy units");}
+    else if(u.start==="backdoor"){var _bc=S[p].board.filter(function(x){return x.stealth;}).length;if(_bc>0){S[other(p)].core-=_bc;log("sys",u.name+": "+_bc+" to enemy Core ("+_bc+" Stealth)");}}
   });
   S[p].board.forEach(u=>{if(u.stunned){u.stunned=false;u.ready=false;}else u.ready=true;});
   cleanup();
@@ -1119,6 +1213,7 @@ function useLocApply(seat,uid){
     case "fwLaser":{var lt=S[opp].board.filter(function(x){return x.type!=="permanent"&&!x.stealth&&x.hp>0;}).sort(function(a,b){return b.atk-a.atk;})[0];if(lt)hurt(lt,1);else S[opp].core-=1;break;}
     case "fwGiga":S[seat].board.forEach(function(x){if(x.mech)x.armor=(x.armor||0)+2;});log("sys","Mechs +2 Armor");break;
     case "fwOverload":{var ot=S[seat].board.filter(function(x){return x.mech&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(ot){ot.atk++;ot.hp++;ot.maxHp++;}break;}
+    case "recoveryMega":{var c=u.charges||0;if(c>0){var md=mkUnit("swm_mega");md.atk=1+c;md.hp=1+c;md.maxHp=1+c;md.token=true;md.ready=false;applyPerm(seat,md);if(nUnits(seat)<7)S[seat].board.push(md);u.charges=0;log("sys",u.name+" assembles a "+(1+c)+"/"+(1+c)+" Mega Drone");}else log("sys",u.name+": no charges yet");break;}
   }
   if(u.uses<=0){u.hp=0;log("sys",u.name+" depleted");}
   cleanup();
@@ -1129,7 +1224,7 @@ function canUsePower(seat,slot){
   if(slot==="ult")return (S[seat].charge||0)>=(S[seat].chargeMax||5);
   if(!pw.repeatable&&S[seat].used&&S[seat].used[slot])return false;
   if(pw.fx==="bank"&&S.pool<=pw.cost)return false;
-  return spendable(seat)>=pw.cost;
+  return spendable(seat)>=powCost(seat,slot);
 }
 function usePower(slot){
   if(S.turn!==MY||busy||S.over)return;
@@ -1141,14 +1236,17 @@ function usePower(slot){
 function usePowerApply(seat,slot,target){
   if(!canUsePower(seat,slot))return;
   const pw=powerDef(seat,slot),opp=other(seat);
-  if(slot==="ult"){S[seat].charge=0;}else{payN(seat,pw.cost);if(!pw.repeatable)S[seat].used[slot]=true;}
+  if(slot==="ult"){S[seat].charge=0;}else{payN(seat,powCost(seat,slot));if(!pw.repeatable)S[seat].used[slot]=true;}
   if(slot==="core")S[seat].charge=Math.min(S[seat].chargeMax||5,(S[seat].charge||0)+1);
   log(seat==="me"?"me":"ai",(seat==="me"?"You":"Enemy")+(slot==="ult"?" ★ULTIMATE: ":(slot==="draw"?" power: ":slot==="bank"?" GENERATOR: ":" CORE POWER: "))+pw.name);
   recentAct={t:"act",who:seat,text:pw.name};
   if(typeof sfx==="function")sfx(slot==="ult"?"ult":"power");if(slot==="ult"&&typeof screenFlash==="function")screenFlash("rgba(255,255,255,.22)");
   switch(pw.fx){
+    case "sngCompile":if(S[seat].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,1);});cleanup();log("sys","Void Pulse: 1 to all enemy units");}else{addCompile(seat,1);}break;
+    case "sngParseP":draw(seat);if(S[seat].void){draw(seat);log("sys","Datastream: draw 2");}else{addCompile(seat,1);}break;
+    case "sngInit":if(S[seat].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,4);});cleanup();log("sys","System Purge: 4 to all enemy units");}else{addCompile(seat,3);S.pool+=3;log("sys","Initialize: +3 Compile, +3⚡ pool");}break;
     case "bank":bankTo(seat,pw.val||3);break;
-    case "steal":if(target&&target.unit){const ix=S[opp].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&S[seat].board.length<7){S[opp].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[seat].board.push(target.unit);log("sys",(seat==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
+    case "steal":if(target&&target.unit){const ix=S[opp].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&nUnits(seat)<7){S[opp].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[seat].board.push(target.unit);log("sys",(seat==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
     case "transform":if(target&&target.unit){if(isDevil(target.unit)){transformDemon(target.unit);log("sys",target.unit.name+" becomes a 4/4 Demon");}else log("sys","Only Devils can be possessed");}break;
     case "darkpact":draw(seat);S[seat].core-=1;break;
     case "ult_ascend":S[seat].permBuff.atk+=2;S[seat].permBuff.hp+=2;S[seat].board.forEach(u=>{if(u.type!=="permanent"){u.atk+=2;u.hp+=2;u.maxHp+=2;}});log("sys","Ascendancy: your units +2/+2, forever");break;
@@ -1158,10 +1256,11 @@ function usePowerApply(seat,slot,target){
     case "minorRead":addArcana(seat,"minor");S.pool+=1;break;
     case "foretell":draw(seat);S[seat].omenMajor=true;log("sys","Omen set — your next Arcana is a Major");break;
     case "ult_revelation":addArcana(seat,"major");addArcana(seat,"major");break;
+    case "ult_curse":{var cu=(S[seat].curseUses||0);var cid=cu===0?"ren_curse_ghouls":(cu===1?"ren_curse_plague":"ren_curse_bloodmoon");S[seat].curseUses=cu+1;if(S[seat].hand.length<HAND_MAX){S[seat].hand.push(cid);log("sys",(seat==="me"?"You":"Enemy")+" conjure "+cardName(cid));}else log("sys","Hand full — Curse lost");break;}
     case "conscript":makeToken(seat,"bas_recruit");break;
     case "mobilize":draw(seat);if((S[seat].coreGainedTurn||0)>0){draw(seat);var _g=S[seat].coreGainedTurn;var _t=S[seat].board.filter(function(u){return u.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];if(_t){_t.atk+=_g;log("sys",_t.name+" +"+_g+" ATK (mobilized)");}}break;
     case "assembleScrapling":makeToken(seat,"mech_scrapling");break;
-    case "ult_colossus":{var u=mkUnit("mech_colossus");var sb=Math.floor((S[seat].scrap||0)/2);u.atk+=sb;u.hp+=sb;u.maxHp+=sb;var spawns=0;S[seat].board.forEach(function(fw){if(!fw.frame)return;if(fw.frame==="assembly"){u.atk+=2;u.hp+=2;u.maxHp+=2;spawns+=2;}else if(fw.frame==="laser"){u.overheat=true;u.ready=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="giga"){u.guard=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="overload"){u.atk+=4;u.hp+=4;u.maxHp+=4;}});applyPerm(seat,u);if(S[seat].board.length<7)S[seat].board.push(u);for(var si=0;si<spawns;si++)makeToken(seat,"mech_scrapling");log("sys",(seat==="me"?"You":"Enemy")+" forge the Iron Colossus ("+u.atk+"/"+u.hp+")");break;}
+    case "ult_colossus":{var u=mkUnit("mech_colossus");var sb=Math.floor((S[seat].scrap||0)/2);u.atk+=sb;u.hp+=sb;u.maxHp+=sb;var spawns=0;S[seat].board.forEach(function(fw){if(!fw.frame)return;if(fw.frame==="assembly"){u.atk+=2;u.hp+=2;u.maxHp+=2;spawns+=2;}else if(fw.frame==="laser"){u.overheat=true;u.ready=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="giga"){u.guard=true;u.atk+=2;u.hp+=2;u.maxHp+=2;}else if(fw.frame==="overload"){u.atk+=4;u.hp+=4;u.maxHp+=4;}});applyPerm(seat,u);if(nUnits(seat)<7)S[seat].board.push(u);for(var si=0;si<spawns;si++)makeToken(seat,"mech_scrapling");log("sys",(seat==="me"?"You":"Enemy")+" forge the Iron Colossus ("+u.atk+"/"+u.hp+")");break;}
     case "launder":bankTo(seat,2);break;
     case "counterfeit":S[seat].cap+=2;log("sys",(seat==="me"?"You":"Enemy")+" counterfeits +2⚡");break;
     case "spawn":makeToken(seat,"swm_drone");break;
@@ -1201,7 +1300,7 @@ function aiPickPower(){
   if(ai.used&&!ai.used.core&&spendable("ai")>=POWERS[f].core.cost){
     if(f==="bas"&&ai.core<16)return{power:true,slot:"core"};
     if(f==="syn")return{power:true,slot:"core"};
-    if(f==="sng"&&S.pool<5)return{power:true,slot:"core"};
+    if(f==="sng"){if(!ai.void)return{power:true,slot:"core"};const en=S.me.board.filter(u=>u.type!=="permanent"&&u.hp>0);if(en.length)return{power:true,slot:"core"};}
     if(f==="swm"&&ai.board.filter(u=>u.type!=="permanent").length<6)return{power:true,slot:"core"};
     if(f==="melt"){const t=S.me.board.filter(u=>u.type!=="permanent"&&!u.stealth&&u.hp+u.armor===1).sort((a,b)=>b.atk-a.atk)[0];if(t)return{power:true,slot:"core",target:{kind:"unit",unit:t}};if(S.me.core<=4)return{power:true,slot:"core",target:{kind:"core",side:"me"}};}
     if(f==="zd"){const u=ai.board.find(x=>x.atk>=3&&!x.stealth&&x.type!=="permanent");if(u)return{power:true,slot:"core",target:{kind:"unit",unit:u}};}
@@ -1221,11 +1320,14 @@ function aiPickPower(){
 
 /* ===================== PLAY ===================== */
 function playProgram(p,handIdx){
-  const id=S[p].hand[handIdx];pay(p,id);S[p].hand.splice(handIdx,1);recentAct={t:"card",id:id,who:p};
-  const u=mkUnit(id);u.ready=!!u.overheat;applyPerm(p,u);S[p].board.push(u);
+  const id=S[p].hand[handIdx];const _cs=(DB[id]&&DB[id].deploy==="cashout")?Math.max(0,effCost(p,id)-S.pool):0;pay(p,id);S[p].hand.splice(handIdx,1);recentAct={t:"card",id:id,who:p};
+  const u=mkUnit(id);u.ready=!!u.overheat;if(S[p].void&&DB[id].vatk!=null){u.atk=DB[id].vatk;u.hp=DB[id].vhp;u.maxHp=DB[id].vhp;}applyPerm(p,u);u._cs=_cs;S[p].board.push(u);if(DB[id].type==='program'){var _ho=other(p);if(S[_ho].board.some(function(x){return x.honeypot&&x.hp>0;})){hurt(u,S[_ho].void?2:1);log('sys','Honeypot stings '+u.name);}}
   log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+(u.type==="permanent"?" build ":" deploy ")+u.name);
   // deploy triggers
   switch(u.deploy){
+    case "sngSeed":if(S[p].void){S[other(p)].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,2);});cleanup();log("sys",u.name+" erupts: 2 to all enemies");}else{addCompile(p,1);}break;
+    case "sngSprite":if(S[p].void){S.pool+=4;S[other(p)].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,1);});cleanup();log("sys",u.name+": +4⚡, 1 to all enemies");}else{S.pool+=2;addCompile(p,1);log("sys",u.name+": +2⚡ pool, +1 Compile");}break;
+    case "sngOvermind":if(S[p].void){S[other(p)].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,2);});cleanup();log("sys",u.name+": 2 to all enemies");}break;
     case "bank2":log("sys",(p==="me"?"You":"Enemy")+" bank "+bankTo(p,2)+"⚡");break;
     case "replicate":makeToken(p,"swm_drone");break;
     case "draw1":draw(p);break;
@@ -1242,6 +1344,8 @@ function playProgram(p,handIdx){
     case "flipAllies":S[p].board.forEach(o=>{if(o!==u&&o.type!=="permanent")swapStats(o);});log("sys",u.name+" flips the troupe");break;
     case "knifeThrow":S[other(p)].core-=1;log("sys",u.name+" throws — 1 to enemy Core");break;
     case "weakenStrong":{const t=S[other(p)].board.filter(x=>x.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(t){t.atk=Math.max(0,t.atk-2);log("sys",u.name+" cows "+t.name+" (-2 ATK)");}break;}
+    case "cashout":{var cs=u._cs||0;if(cs>0){u.atk+=cs;u.hp+=cs;u.maxHp+=cs;S[other(p)].core-=cs;log("sys",u.name+" cashes out: +"+cs+"/+"+cs+" and "+cs+" to enemy Core");}break;}
+    case "scaleCap3":{var b=Math.floor((S[p].cap||0)/3);if(b){u.atk+=b;u.hp+=b;u.maxHp+=b;log("sys",u.name+" +"+b+"/+"+b+" from the hoard");}break;}
     case "transformAlly":{const t=S[p].board.filter(x=>isDevil(x)&&x!==u).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t){transformDemon(t);log("sys",t.name+" is dragged into Demonhood (4/4)");}break;}
     case "championAscend":transformDemon(u);S[p].permBuff.atk+=2;S[p].permBuff.hp+=2;S[p].board.forEach(o=>{if(o.type!=="permanent"){o.atk+=2;o.hp+=2;o.maxHp+=2;}});log("sys",u.name+" ascends and empowers the legion (+2/+2)");break;
     case "ritual1":conductRitual(p,1);break;
@@ -1251,17 +1355,24 @@ function playProgram(p,handIdx){
     case "buildAssembly":buildFramework(p,"assembly",false);break;
     case "buildLaser":buildFramework(p,"laser",false);break;
     case "buildGiga":buildFramework(p,"giga",false);break;
+    case "anthemAtk":S[p].board.forEach(function(x){if(x.type!=="permanent")x.atk+=1;});log("sys",u.name+": your units +1 ATK");break;
+    case "burnCore2":S[other(p)].core-=2;log("sys",u.name+": 2 to enemy Core");break;
+    case "anthemHp":S[p].board.forEach(function(x){if(x.type!=="permanent"){x.hp+=1;x.maxHp+=1;}});log("sys",u.name+": your units +1 HP");break;
   }
+  if(u.overheat)S[p].board.forEach(function(x){if(x.cm)x.cmStacks=(x.cmStacks||1)+1;});
   if(u.deploy)spellFx={fx:u.deploy,who:p,target:null};
   wiretap(p);
   cleanup();
 }
 function playScript(p,handIdx,target){
   const id=S[p].hand[handIdx],def=DB[id];pay(p,id);S[p].hand.splice(handIdx,1);recentAct={t:"card",id:id,who:p};
-  S[p].compile=(S[p].compile||0)+1;
+  addCompile(p,1);
   const opp=other(p);
   log(p==="me"?"me":"ai",(p==="me"?"You":"Enemy")+" run "+cardName(id));
   switch(def.fx){
+    case "sngRecompile":draw(p);if(S[p].void){draw(p);log("sys","Recompile: draw 2");}else{addCompile(p,1);}break;
+    case "sngFirewall":if(target&&target.unit)hurt(target.unit,S[p].void?3:2);if(S[p].void){S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0&&x!==(target&&target.unit))hurt(x,3);});log("sys","Firewall engulfs all enemies");}cleanup();break;
+    case "sngPurge":{var _pv=S[p].void?5:3;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0)hurt(x,_pv);});if(S[p].void)S[opp].core-=3;cleanup();log("sys","Void Purge: "+_pv+" to all enemies"+(S[p].void?", 3 to Core":""));break;}
     case "dmgAny":if(target.kind==="unit")hurt(target.unit,def.val);else S[target.side].core-=def.val;break;
     case "burnUnit":{let v=def.val;if(S[p].board.some(u=>u.overheat))v=def.bonus;hurt(target.unit,v);break;}
     case "coreBurn":S[opp].core-=def.val;S[p].core-=def.self||0;break;
@@ -1279,7 +1390,7 @@ function playScript(p,handIdx,target){
     case "fortify":target.unit.guard=true;target.unit.armor=(target.unit.armor||0)+def.val;break;
     case "giveStealth":target.unit.stealth=true;break;
     case "stun":if(target&&target.unit){target.unit.stunned=true;target.unit.ready=false;log("sys",target.unit.name+" is stunned");}break;
-    case "steal":if(target&&target.unit){const op=other(p);const ix=S[op].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&S[p].board.length<7){S[op].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[p].board.push(target.unit);log("sys",(p==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
+    case "steal":if(target&&target.unit){const op=other(p);const ix=S[op].board.indexOf(target.unit);if(ix>=0&&target.unit.type!=="permanent"&&nUnits(p)<7){S[op].board.splice(ix,1);target.unit.ready=false;target.unit.stunned=false;S[p].board.push(target.unit);log("sys",(p==="me"?"You":"Enemy")+" bought out "+target.unit.name);}}break;
     case "tax":S[opp].taxNext=(S[opp].taxNext||0)+1;log("sys",(opp==="me"?"You":"Enemy")+" taxed +1⚡");break;
     case "gainCore":addCore(p,def.val);break;
     case "discard":{const h=S[opp].hand;if(h.length){const i=Math.random()*h.length|0;const d=h.splice(i,1)[0];log("sys",(opp==="me"?"You":"Enemy")+" discard "+cardName(d));}break;}
@@ -1288,6 +1399,10 @@ function playScript(p,handIdx,target){
     case "reanimate":{const g=(S[p].grave||[]).pop();if(g){summon(p,g);log("sys","Reanimated "+cardName(g));}else makeToken(p,"ren_ghoul");break;}
     case "swapUnit":if(target&&target.unit){swapStats(target.unit);log("sys","Mirror: "+target.unit.name+" flipped");}break;
     case "swapAll":S.me.board.concat(S.ai.board).forEach(swapStats);log("sys","Funhouse! every unit flipped");break;
+    case "magicktrick":if(target&&target.unit){var _mt=target.unit;S[opp].core-=_mt.atk;addCore(p,_mt.hp);log("sys","Magick Trick: "+_mt.atk+" to enemy Core, +"+_mt.hp+" Core");}break;
+    case "hellfire":{var _hf=2+2*(S[p].ascends||0);S[opp].core-=_hf;log("sys","Hellfire: "+_hf+" to enemy Core");break;}
+    case "brimstone":{if(target&&target.unit)hurt(target.unit,def.val);if(S[p].board.some(function(x){return x.demon;})){S[opp].board.forEach(function(x){if(x.type!=="permanent")hurt(x,def.val);});log("sys","Brimstone engulfs all enemies");}else log("sys","Brimstone: "+def.val+" damage");break;}
+    case "wobbly":if(target&&target.unit){var _wu=target.unit;swapStats(_wu);if(S[p].board.indexOf(_wu)>=0){_wu.atk+=2;_wu.hp+=2;_wu.maxHp+=2;log("sys","Wobbly Mirror: "+_wu.name+" flipped, +2/+2");}else{_wu.atk=Math.max(0,_wu.atk-2);_wu.hp-=2;_wu.maxHp=Math.max(1,_wu.maxHp-2);log("sys","Wobbly Mirror: "+_wu.name+" flipped, -2/-2");}}break;
     case "buff":if(target&&target.unit){target.unit.atk+=def.val;target.unit.hp+=def.val;target.unit.maxHp+=def.val;log("sys",target.unit.name+" +"+def.val+"/+"+def.val);}break;
     case "shrink":if(target&&target.unit){const x=target.unit;x.atk=1;x.hp=1;x.maxHp=1;x.armor=0;log("sys",x.name+" shrunk to 1/1");}break;
     case "anthem":S[p].board.forEach(u=>{if(u.type!=="permanent"){u.atk++;u.hp++;u.maxHp++;}});log("sys","Big Top: your units +1/+1");break;
@@ -1298,10 +1413,24 @@ function playScript(p,handIdx,target){
     case "sacRitual":if(target&&target.unit){target.unit.hp=0;conductRitual(p,2);draw(p);log("sys","Offering accepted — Ritual +2");}break;
     case "drawArc":addArcana(p,def.tier||"minor");break;
     case "dmgPerUnit":{var n=S[p].board.filter(function(x){return x.type!=="permanent";}).length;S[opp].core-=n;log("sys","DDoS: "+n+" to enemy Core");break;}
+    case "cashburn":{var amt=S[p].cap||0;S[opp].core-=amt;S[p].cap=0;log("sys","Cash Out: "+amt+" to enemy Core (vault emptied)");break;}
+    case "shakedown":{if(target.kind==="unit")hurt(target.unit,def.val);else S[target.side].core-=def.val;S[p].cap+=1;log("sys","Shakedown: "+def.val+" damage, bank 1⚡");break;}
+    case "targetedOffense":{var dmg=S[p].board.filter(function(x){return x.drone;}).reduce(function(s,x){return s+x.atk;},0);if(target&&target.unit){hurt(target.unit,dmg);log("sys","Targeted Offense: "+dmg+" damage");}break;}
+    case "overcharge":{if(target.kind==="unit")hurt(target.unit,def.val);else S[target.side].core-=def.val;var bt=S[p].board.filter(function(x){return x.type!=="permanent"&&x.atk>0;}).sort(function(a,b){return b.atk-a.atk;})[0];if(bt){bt.atk+=2;log("sys",bt.name+" +2 ATK (overcharged)");}log("sys","Overcharge: "+def.val+" damage");break;}
+    case "strikeforce":{if(target&&target.unit)hurt(target.unit,def.val);else if(target&&target.side)S[target.side].core-=def.val;var ft=S[p].board.filter(function(x){return x.type!=="permanent"&&x.hp>0;}).sort(function(a,b){return (b.armor||0)-(a.armor||0);})[0];if(ft)hurt(ft,def.self||2);log("sys","Strike Force: "+def.val+" damage, "+(def.self||2)+" to "+(ft?ft.name:"-"));break;}
+    case "maintenance":draw(p);addCore(p,2);break;
+    case "backstab":{var _a=S[p].board.filter(function(x){return x.stealth&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];var _d=_a?_a.atk:0;if(target&&target.unit&&_d>0){hurt(target.unit,_d);_a.stealth=false;log("sys","Backstab: "+_d+" damage; "+_a.name+" revealed");}else log("sys","Backstab: no Stealth unit");break;}
+    case "execute":{if(target&&target.unit)target.unit.hp=0;var en=S[opp].board.filter(function(x){return x.type!=="permanent"&&x.hp>0;});for(var k=0;k<2&&en.length;k++){var ix=Math.random()*en.length|0;en[ix].hp=0;en.splice(ix,1);}log("sys","Execute: 1 sacrificed, 2 enemies destroyed");break;}
+    case "curseGhouls":{S[p].ghoulBuff=S[p].ghoulBuff||{atk:0,hp:0};S[p].ghoulBuff.atk+=2;S[p].ghoulBuff.hp+=2;S[p].board.forEach(function(x){if(x.ghoul){x.atk+=2;x.hp+=2;x.maxHp+=2;}});for(var g=0;g<4;g++)makeToken(p,"ren_ghoul");log("sys","Curse of Ghouls: 4 Ghouls, all Ghouls +2/+2");break;}
+    case "cursePlague":{S[opp].board.forEach(function(x){if(x.type!=="permanent")hurt(x,2);});S[opp].core-=2;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0){x.atk=2;x.hp=2;x.maxHp=2;x.armor=0;x.id="ren_ghoul";x.name="Ghoul";x.ghoul=true;}});log("sys","Curse of Plagues — the enemy is plagued into Ghouls");break;}
+    case "curseBloodmoon":{var _bm=S.deaths||0;S[opp].core-=_bm;log("sys","Bloodmoon: "+_bm+" to enemy Core ("+_bm+" deaths)");break;}
+    case "invokevoid":{var _iv=2*(S[p].summons||0);S[opp].core-=_iv;log("sys","Invoke the Void: "+_iv+" to enemy Core ("+(S[p].summons||0)+" Rituals)");break;}
+    case "hex":{if(target&&target.unit){hurt(target.unit,def.val);conductRitual(p,1);if(target.unit.hp<=0)conductRitual(p,1);log("sys","Hex: "+def.val+" damage, Ritual fed");}break;}
     case "buildFrame":{var ks=["assembly","laser","giga","overload"];buildFramework(p,ks[Math.random()*ks.length|0],false);break;}
     case "stealthBuff":{let c=0;S[p].board.forEach(function(u){if(u.stealth){u.atk+=(def.val||2);c++;}});log("sys","Shadow Blades: "+c+" stealthed unit(s) +"+(def.val||2)+" ATK");break;}
-    case "summonBody":{const u=mkUnit("prph_spirit");u.atk=def.val;u.hp=def.val;u.maxHp=def.val;u.token=true;u.ready=false;applyPerm(p,u);if(S[p].board.length<7)S[p].board.push(u);log("sys",(p==="me"?"You":"Enemy")+" summons a "+def.val+"/"+def.val+" Spirit");break;}
+    case "summonBody":{const u=mkUnit("prph_spirit");u.atk=def.val;u.hp=def.val;u.maxHp=def.val;u.token=true;u.ready=false;applyPerm(p,u);if(nUnits(p)<7)S[p].board.push(u);log("sys",(p==="me"?"You":"Enemy")+" summons a "+def.val+"/"+def.val+" Spirit");break;}
   }
+  if(ARCANA_MINOR.indexOf(id)>=0||ARCANA_MAJOR.indexOf(id)>=0){S[p].board.forEach(function(x){if(x.arcanaGrow){x.atk+=1;x.hp+=1;x.maxHp+=1;}});}
   spellFx={fx:def.fx,who:p,target:target};
   wiretap(p);
   cleanup();
@@ -1347,6 +1476,8 @@ function cleanup(){
         else if(u.death==="martyrSpawn"){makeToken(p,"ren_ghoul");}
         else if(u.death==="cultRitual"){conductRitual(p,1);}
         else if(u.death==="buildOverload"){buildFramework(p,"overload",true);}
+        if(u.drone){S[p].board.forEach(function(x){if(x.recovery&&x.hp>0)x.charges=(x.charges||0)+1;});}
+        if(u.type!=="permanent")S.deaths=(S.deaths||0)+1;
         else if(u.death==="flipEnemy"){const tt=S[o].board.filter(x=>x.type!=="permanent"&&x.hp>0);if(tt.length){swapStats(tt[Math.random()*tt.length|0]);log("sys",u.name+" warps an enemy");}}
         if(u.type!=="permanent"&&S[p].board.some(x=>x.harvest&&x.hp>0&&x!==u)){S[p].cap+=1;log("sys","Harvest: +1⚡ to Capacitor");}
         if(u.type!=="permanent")S[p].board.forEach(x=>{if(x.vendetta&&x.hp>0&&x!==u)x.atk+=1;});
@@ -1387,18 +1518,27 @@ function myThreats(){return S.me.board.filter(u=>u.atk>0&&!u.stealth).sort((a,b)
 function aiPickPlay(){
   const ai=S.ai,bud=spendable("ai");
   const pmv=aiPickPower();if(pmv)return pmv;
-  {const _l=ai.board.find(u=>u.type==="permanent"&&u.loc&&u.cd===0&&spendable("ai")>=(u.loc.cost||0)&&S.ai.cap>=(u.loc.capCost||0));if(_l)return{loc:_l.uid};}
+  {const _l=ai.board.find(u=>u.type==="permanent"&&u.loc&&u.cd===0&&spendable("ai")>=(u.loc.cost||0)&&S.ai.cap>=(u.loc.capCost||0)&&!(u.recovery&&(u.charges||0)<3));if(_l)return{loc:_l.uid};}
   // removal on biggest threat
   const th=myThreats();
   if(th.length&&th[0].atk>=3){
     const t=th[0];
     const spike=aiIdx("n_spike");if(spike>=0&&canPlay("ai","n_spike")&&t.hp+t.armor<=3)return{i:spike,target:{kind:"unit",unit:t}};
+    const sk=aiIdx("syn_shakedown");if(sk>=0&&canPlay("ai","syn_shakedown")&&t.hp+t.armor<=3)return{i:sk,target:{kind:"unit",unit:t}};
+    const tof=aiIdx("swm_targeted");if(tof>=0&&canPlay("ai","swm_targeted")){const dmg=ai.board.filter(u=>u.drone).reduce((s,u)=>s+u.atk,0);if(dmg>=t.hp+t.armor)return{i:tof,target:{kind:"unit",unit:t}};}
+    const ocg=aiIdx("melt_overcharge");if(ocg>=0&&canPlay("ai","melt_overcharge")&&t.hp+t.armor<=4)return{i:ocg,target:{kind:"unit",unit:t}};
+    const sff=aiIdx("bas_strike");if(sff>=0&&canPlay("ai","bas_strike")&&t.hp+t.armor<=3)return{i:sff,target:{kind:"unit",unit:t}};
+    const bsb=aiIdx("zd_backstab");if(bsb>=0&&canPlay("ai","zd_backstab")){const sa=ai.board.filter(u=>u.stealth&&u.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(sa&&sa.atk>=t.hp+t.armor)return{i:bsb,target:{kind:"unit",unit:t}};}
+    const bm=aiIdx("dem_brimstone");if(bm>=0&&canPlay("ai","dem_brimstone")&&t.hp+t.armor<=3)return{i:bm,target:{kind:"unit",unit:t}};
+    const hx=aiIdx("cult_hex");if(hx>=0&&canPlay("ai","cult_hex")&&t.hp+t.armor<=3)return{i:hx,target:{kind:"unit",unit:t}};
     const lance=aiIdx("melt_lance");if(lance>=0&&canPlay("ai","melt_lance")){const v=ai.board.some(u=>u.overheat)?3:2;if(t.hp+t.armor<=v)return{i:lance,target:{kind:"unit",unit:t}};}
+    const fwl=aiIdx("sng_firewall");if(fwl>=0&&canPlay("ai","sng_firewall")){const v=ai.void?3:2;if(t.hp+t.armor<=v)return{i:fwl,target:{kind:"unit",unit:t}};}
   }
   const shk=aiIdx("carn_shrink");if(shk>=0&&canPlay("ai","carn_shrink")){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>=4).sort((a,b)=>b.atk-a.atk)[0];if(t)return{i:shk,target:{kind:"unit",unit:t}};}
   const vir=aiIdx("zd_virus");if(vir>=0&&canPlay("ai","zd_virus")){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>=3&&!u.stunned).sort((a,b)=>b.atk-a.atk)[0];if(t)return{i:vir,target:{kind:"unit",unit:t}};}
   const ex=aiIdx("zd_exploit");if(ex>=0&&canPlay("ai","zd_exploit")&&(S.me.core<=6||Math.random()<0.5))return{i:ex};
   const ps=aiIdx("melt_spike");if(ps>=0&&canPlay("ai","melt_spike")&&S.me.core<=8)return{i:ps};
+  const sfc=aiIdx("bas_strike");if(sfc>=0&&canPlay("ai","bas_strike")&&S.me.core<=3)return{i:sfc,target:{kind:"core",side:"me"}};
   for(const fx of["poolPlus","tokens","tax","bank","capPlus","cantrip","drawPerCap","gainCore","discard"]){
     const id=aiHasFx(fx);if(id&&canPlay("ai",id)){
       if(fx==="bank"&&S.pool<3)continue;
@@ -1410,14 +1550,24 @@ function aiPickPlay(){
     }
   }
   const sb=aiIdx("zd_blades");if(sb>=0&&canPlay("ai","zd_blades")&&ai.board.filter(function(u){return u.stealth;}).length>=2)return{i:sb};
+  {const cb=aiIdx("syn_cashout");if(cb>=0&&canPlay("ai","syn_cashout")&&(S.me.core<=(S.ai.cap||0)||(S.ai.cap||0)>=8))return{i:cb};}
+  {const mnt=aiIdx("bas_maint");if(mnt>=0&&canPlay("ai","bas_maint")&&ai.hand.length<=4)return{i:mnt};}
   const poss=aiIdx("dem_possess");if(poss>=0&&canPlay("ai","dem_possess")){const t=ai.board.filter(u=>isDevil(u)&&u.atk<4).sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:poss,target:{kind:"unit",unit:t}};}
   for(const gid of ["dem_fury","dem_brand","dem_plate"]){const ix=aiIdx(gid);if(ix>=0&&canPlay("ai",gid)){const fu=ai.board.filter(x=>x.type!=="permanent"&&x.atk>0).sort((a,b)=>b.atk-a.atk)[0];if(fu)return{i:ix,target:{kind:"unit",unit:fu}};}}
   const off=aiIdx("cult_offering");if(off>=0&&canPlay("ai","cult_offering")&&ai.board.filter(u=>u.type!=="permanent").length>1){const t=ai.board.filter(u=>u.type!=="permanent").sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(t)return{i:off,target:{kind:"unit",unit:t}};}
   for(const rid of ["cult_rite","cult_chant"]){const ix=aiIdx(rid);if(ix>=0&&canPlay("ai",rid)&&S.pool>=1)return{i:ix};}
   for(const aid of ["arc_death","arc_tower","arc_sun","arc_swords","arc_strength","arc_wheel","arc_star","arc_cups","arc_wands","arc_pentacles","arc_judgement","prph_vision","prph_tarot"]){const ix=aiIdx(aid);if(ix>=0&&canPlay("ai",aid)){const def=DB[aid];if(def.target==="enemyUnit"||def.target==="any"){const tt=myThreats()[0];if(tt)return{i:ix,target:{kind:"unit",unit:tt}};if(def.target==="any")return{i:ix,target:{kind:"core",side:"me"}};}else if(def.target==="friendly"){const fu=ai.board.filter(x=>x.type!=="permanent").sort((a,b)=>b.atk-a.atk)[0];if(fu)return{i:ix,target:{kind:"unit",unit:fu}};}else return{i:ix};}}
+  {const ex=aiIdx("ren_execute");if(ex>=0&&canPlay("ai","ren_execute")&&S.me.board.filter(u=>u.type!=="permanent").length>=1){const sac=ai.board.filter(u=>u.type!=="permanent").sort((a,b)=>(a.atk+a.hp)-(b.atk+b.hp))[0];if(sac)return{i:ex,target:{kind:"unit",unit:sac}};}}
+  for(const cz of["ren_curse_bloodmoon","ren_curse_plague","ren_curse_ghouls"]){const ix=aiIdx(cz);if(ix>=0&&canPlay("ai",cz))return{i:ix};}
+  {const iv=aiIdx("cult_void");if(iv>=0&&canPlay("ai","cult_void")){const d=2*(S.ai.summons||0);if(d>=S.me.core||d>=8)return{i:iv};}}
+  {const hf=aiIdx("dem_hellfire");if(hf>=0&&canPlay("ai","dem_hellfire")){const dmg=2+2*(S.ai.ascends||0);if(dmg>=S.me.core||dmg>=8)return{i:hf};}}
+  {const mk=aiIdx("carn_magick");if(mk>=0&&canPlay("ai","carn_magick")){const u=ai.board.filter(x=>x.type!=="permanent"&&x.atk>0).sort((a,b)=>b.atk-a.atk)[0];if(u&&(u.atk>=4||S.me.core<=u.atk))return{i:mk,target:{kind:"unit",unit:u}};}}
+  {const wb=aiIdx("carn_wobbly");if(wb>=0&&canPlay("ai","carn_wobbly")){const t=myThreats()[0];if(t&&t.atk>=4)return{i:wb,target:{kind:"unit",unit:t}};}}
   const ov=aiIdx("swm_overload");if(ov>=0&&canPlay("ai","swm_overload")&&ai.board.length>=4)return{i:ov};
   const rf=aiIdx("bas_reinforce");if(rf>=0&&canPlay("ai","bas_reinforce")&&ai.board.length&&th.length){const g=ai.board.slice().sort((a,b)=>b.hp-a.hp)[0];return{i:rf,target:{kind:"unit",unit:g}};}
   const inj=aiIdx("melt_inject");if(inj>=0&&canPlay("ai","melt_inject")){const u=ai.board.filter(x=>x.hp>2).sort((a,b)=>b.atk-a.atk)[0];if(u)return{i:inj,target:{kind:"unit",unit:u}};}
+  {const pg=aiIdx("sng_purge");if(pg>=0&&canPlay("ai","sng_purge")){const v=ai.void?5:3;const kills=S.me.board.filter(u=>u.type!=="permanent"&&u.hp>0&&u.hp+(u.armor||0)<=v).length;if(kills>=2)return{i:pg};}}
+  {const rc=aiIdx("sng_recompile");if(rc>=0&&canPlay("ai","sng_recompile")&&(!ai.void||ai.hand.length<=4))return{i:rc};}
   const _bN=ai.board.filter(u=>u.type!=="permanent").length;let best=-1,bc=-1;ai.hand.forEach((id,i)=>{const c=DB[id];if(((c.type==="permanent")||(c.type==="program"&&_bN<6))&&canPlay("ai",id)&&effCost("ai",id)>bc){best=i;bc=effCost("ai",id);}});
   if(best>=0)return{i:best};
   return null;
@@ -1519,7 +1669,7 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"\x27]/g,function(c){re
 
 /* ===================== KEYWORDS / INSPECTOR ===================== */
 function kwOf(x){const def=DB[x.id]||x;const k=[];
-  if(x.guard)k.push("Guard");if(x.leech)k.push("Leech");if(x.overheat)k.push("Overheat");
+  if(x.guard)k.push("Guard");if(x.leech)k.push("Launder");if(x.overheat)k.push("Overheat");
   if(x.stealth)k.push("Stealth");if(x.mech)k.push("Mech");
   if(x.demon)k.push("Demon");else if(x.ascendOnAttack||x.ascendOnDeath)k.push("Ascend");
   if(def.deploy==="assemble")k.push("Assemble");
@@ -1631,7 +1781,7 @@ function unitCard(side,u){
     if((t==="enemyUnit"&&theirs&&!u.stealth)||(t==="friendly"&&mine)||(t==="any"&&!(theirs&&u.stealth))||(t==="unit"&&!(theirs&&u.stealth))||(t==="devil"&&mine&&isDevil(u)))cls.push("target");}
   else if(selectedUnit&&theirs&&!u.stealth)cls.push("target");
   const arm=u.armor>0?`<div class="arm">🛡${u.armor}</div>`:"";
-  const status=isPerm?(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`):chips(u);
+  const status=isPerm?(u.recovery?`<span class="pstat">◆ ${u.charges||0} charge${(u.charges||0)===1?"":"s"}</span>`:u.cm?`<span class="pstat">☢ ${u.cmStacks||1}/turn</span>`:(u.loc?`<span class="pstat">${u.cd>0?("CD "+u.cd):"READY"} · ${(u.uses||0)}×</span>`:`<span class="pstat">ENGINE</span>`)):chips(u);
   const foot=isPerm?`<span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${u.hp}</span>`:`<span class="atk">${u.atk}</span><span class="hp">${u.hp}</span>`;
   return `<div class="${cls.join(' ')}" data-uid="${u.uid}" data-hp="${u.hp}" onclick="onUnitClick('${side}',${u.uid})" onmouseenter="inspectCard('${u.id}')" onmouseleave="hideInspect()">
     <div class="fl" style="background:${facCol(def.f)}"></div>${arm}
@@ -1647,9 +1797,12 @@ function handCard(id,i){
   if(!DB[id])return "";
   const def=DB[id],ok=canPlay(MY,id),ec=effCost(MY,id);
   const cls=["card","hand-card",def.type];if(ok)cls.push("playable");
+  const _vd=!!S[MY].void,_inf=(_vd&&def.vatk!=null);
+  const _ba=_inf?def.vatk:def.atk,_bh=_inf?def.vhp:def.hp;
   const _pb=permB(),_bz=(def.type==="program"&&(_pb.atk||_pb.hp));
-  const _a=def.atk+(_bz?_pb.atk:0),_h=def.hp+(_bz?_pb.hp:0);
-  const stats=(def.type==="program")?`<div class="stats"><span class="atk"${_bz?' style="color:var(--green)"':''}>${_a}</span><span class="hp"${_bz?' style="color:var(--green)"':''}>${_h}</span></div>`
+  const _a=_ba+(_bz?_pb.atk:0),_h=_bh+(_bz?_pb.hp:0);
+  const _sc=_inf?' style="color:#b07cff"':(_bz?' style="color:var(--green)"':'');
+  const stats=(def.type==="program")?`<div class="stats"><span class="atk"${_sc}>${_a}</span><span class="hp"${_sc}>${_h}</span></div>`
     :(def.type==="permanent"?`<div class="stats"><span class="atk" style="color:#8a7a3a">◆</span><span class="hp">${def.hp}</span></div>`:"");
   const costCol=ec<def.cost?"var(--green)":ec>def.cost?"var(--red)":"";
   const capb=def.capCost?`<div class="capbadge">⚡${def.capCost}</div>`:"";
@@ -1662,7 +1815,7 @@ function handCard(id,i){
     ${ch?`<div class="chips">${ch}</div>`:""}
     <div class="txt">${demTxt(def.txt)}</div>${stats}</div>`;
 }
-function resOf(p){const f=S[p].fac;if(f==="sng")return "◈ Compile "+(S[p].compile||0);if(f==="mech")return "⚙ Scrap "+(S[p].scrap||0);if(f==="cult")return "☥ Ritual "+(S[p].ritual||0)+"/3";if(f==="dem"&&S[p].permBuff&&S[p].permBuff.atk)return "▲ Aura +"+S[p].permBuff.atk+"/+"+S[p].permBuff.hp;if(f==="prph"&&S[p].omenMajor)return "✦ Omen: Major";return "";}
+function resOf(p){const f=S[p].fac;if(f==="sng")return S[p].void?"◈ VOID CORE ONLINE · Infused":("◈ Compile "+(S[p].compile||0)+"/10");if(f==="mech")return "⚙ Scrap "+(S[p].scrap||0);if(f==="cult")return "☥ Ritual "+(S[p].ritual||0)+"/3";if(f==="dem"&&S[p].permBuff&&S[p].permBuff.atk)return "▲ Aura +"+S[p].permBuff.atk+"/+"+S[p].permBuff.hp;if(f==="prph"&&S[p].omenMajor)return "✦ Omen: Major";return "";}
 function render(){
   if(!S)return;
   const V=MY,O=other(MY);
@@ -1681,16 +1834,20 @@ function render(){
   const tm=$("turnMeta");if(tm)tm.textContent="Turn "+Math.max(1,Math.ceil((S.tick||1)/2))+"  ·  next charge +"+genFor()+"⚡";
   $("endBtn").disabled=(!myTurn||busy);
   {var _cancelB=$("cancelBtn");if(_cancelB)_cancelB.style.display=((pendingScript||pendingPower||selectedUnit)&&!busy)?"block":"none";}
-  $("playerBoard").innerHTML=S[V].board.map(u=>unitCard(V,u)).join("");
-  $("enemyBoard").innerHTML=S[O].board.map(u=>unitCard(O,u)).join("");
+  $("playerBoard").innerHTML=S[V].board.filter(u=>u.type!=="permanent").map(u=>unitCard(V,u)).join("");
+  $("playerPerms").innerHTML=S[V].board.filter(u=>u.type==="permanent").map(u=>unitCard(V,u)).join("");
+  $("enemyBoard").innerHTML=S[O].board.filter(u=>u.type!=="permanent").map(u=>unitCard(O,u)).join("");
+  $("enemyPerms").innerHTML=S[O].board.filter(u=>u.type==="permanent").map(u=>unitCard(O,u)).join("");
   const targCore=!!selectedUnit||(pendingScript&&pendingScript.def.target==="any")||(pendingPower&&pendingPower.pw&&pendingPower.pw.target==="any");
   $("enemyCore").classList.toggle("target",!!targCore);$("enemyCore").onclick=()=>onCoreClick(O);
   $("playerCore").classList.toggle("target",!!(pendingScript&&pendingScript.def.target==="any"));$("playerCore").onclick=()=>onCoreClick(V);
   const F=S[V].fac;
-  const setPB=(id,slot)=>{const pw=(slot==="bank")?BANKPOWER[F]:POWERS[F][slot];const el=$(id);if(!el)return;
-    el.textContent=(slot==="ult"?("★ "+pw.name+" "+(S[V].charge||0)+"/"+(S[V].chargeMax||5)):((slot==="core"?"⚡ ":slot==="bank"?"⬢ ":"✚ ")+pw.name+" ("+pw.cost+")"));
-    el.className="powerbtn"+(slot==="ult"?" ult":"")+((pendingPower&&pendingPower.slot===slot)?" arming":"")+((slot==="ult"&&(S[V].charge||0)>=(S[V].chargeMax||5))?" charged":"");
-    el.disabled=!(myTurn&&!busy&&canUsePower(V,slot));el.title=pw.txt;};
+  const _vd=!!S[V].void;
+  const setPB=(id,slot)=>{const pw0=(slot==="bank")?BANKPOWER[F]:POWERS[F][slot];const el=$(id);if(!el)return;
+    const pnm=(_vd&&pw0.vname)?pw0.vname:pw0.name,pct=(_vd&&pw0.vcost!=null)?pw0.vcost:pw0.cost,ptx=(_vd&&pw0.vtxt)?pw0.vtxt:pw0.txt;
+    el.textContent=(slot==="ult"?("★ "+pnm+" "+(S[V].charge||0)+"/"+(S[V].chargeMax||5)):((slot==="core"?"⚡ ":slot==="bank"?"⬢ ":"✚ ")+pnm+" ("+pct+")"));
+    el.className="powerbtn"+(slot==="ult"?" ult":"")+(_vd?" infused":"")+((pendingPower&&pendingPower.slot===slot)?" arming":"")+((slot==="ult"&&(S[V].charge||0)>=(S[V].chargeMax||5))?" charged":"");
+    el.disabled=!(myTurn&&!busy&&canUsePower(V,slot));el.title=ptx;};
   setPB("pwCore","core");setPB("pwDraw","draw");setPB("pwBank","bank");setPB("pwUlt","ult");
   $("enemyPower").textContent="★ "+POWERS[S[O].fac].ult.name+" "+(S[O].charge||0)+"/"+(S[O].chargeMax||5);
   const _mb=$("mullBtn");if(_mb)_mb.style.display=(S.turn===V&&!S[V].mulled&&(S.tick||0)<=2&&!busy&&!S.over)?"block":"none";
@@ -1724,7 +1881,7 @@ function floatNum(el,txt,kind){
 function postAnim(){
   try{
     const cur=new Set(),ns={};
-    document.querySelectorAll("#playerBoard .card.unit,#enemyBoard .card.unit").forEach(function(el){
+    document.querySelectorAll("#playerBoard .card.unit,#enemyBoard .card.unit,#playerPerms .card.unit,#enemyPerms .card.unit").forEach(function(el){
       const uid=el.getAttribute("data-uid");if(uid==null)return;
       const hp=parseInt(el.getAttribute("data-hp")||"0",10);cur.add(uid);ns[uid]=hp;
       if(!_seen.has(uid)){if(ANIM_ON)el.classList.add("aEnter");if(_sndReady)sfx("play");}
@@ -1771,7 +1928,7 @@ function sfRing(el,color){if(!el)return;var o=_sfXY(el);var d=document.createEle
 function sfGlow(el,color){if(!el)return;el.style.color=color;el.classList.remove("fxglowel");void el.offsetWidth;el.classList.add("fxglowel");setTimeout(function(){el.classList.remove("fxglowel");el.style.removeProperty("color");},540);}
 function sfCore(seat,color){var el=$(seat===MY?"playerCore":"enemyCore");if(!el)return;el.style.color=color;el.classList.remove("fxcorepulse");void el.offsetWidth;el.classList.add("fxcorepulse");setTimeout(function(){el.classList.remove("fxcorepulse");el.style.removeProperty("color");},540);}
 function sfCards(boardId,fn){var els=document.querySelectorAll("#"+boardId+" .card.unit");var i=0;els.forEach(function(el){fn(el,i++);});}
-function sfCardEl(uid){return document.querySelector('#playerBoard [data-uid="'+uid+'"], #enemyBoard [data-uid="'+uid+'"]');}
+function sfCardEl(uid){return document.querySelector('#playerBoard [data-uid="'+uid+'"], #enemyBoard [data-uid="'+uid+'"], #playerPerms [data-uid="'+uid+'"], #enemyPerms [data-uid="'+uid+'"]');}
 function spellCat(fx){
   if(["empEnemy","burnAll1","ult_meltdown"].indexOf(fx)>=0)return "aoeEnemy";
   if(["dmgAny","burnUnit","coreBurn","coreDmg","ult_breach","spark","knifeThrow"].indexOf(fx)>=0)return "dmg";
@@ -1804,7 +1961,7 @@ function fxRunAttack(atk){
   const bottom=!!aEl.closest("#playerBoard");
   let tEl=null;
   if(atk.t.kind==="core"){tEl=$(bottom?"enemyCore":"playerCore");}
-  else{tEl=document.querySelector("#"+(bottom?"enemyBoard":"playerBoard")+' [data-uid="'+atk.t.uid+'"]')||$(bottom?"enemyBoard":"playerBoard");}
+  else{tEl=document.querySelector("#"+(bottom?"enemyBoard":"playerBoard")+' [data-uid="'+atk.t.uid+'"]')||document.querySelector("#"+(bottom?"enemyPerms":"playerPerms")+' [data-uid="'+atk.t.uid+'"]')||$(bottom?"enemyBoard":"playerBoard");}
   if(!tEl)return;
   attackFx(aEl,tEl,facCol(atk.fac),ATK_STYLE[atk.fac]||"beam");
 }
