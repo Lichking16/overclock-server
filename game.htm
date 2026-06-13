@@ -326,6 +326,35 @@
 .fxpoof i{position:absolute;left:0;top:0;width:6px;height:6px;margin:-3px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:poofk .54s ease-out forwards}
 .card.unit.aHit .cardart{animation:aHitk .32s ease}
 
+/* ===================== POLISH PASS: board & ambient ===================== */
+/* drifting aurora + grid backdrop (fixed, behind everything) */
+body::before{content:"";position:fixed;inset:-15%;z-index:-2;pointer-events:none;
+  background:radial-gradient(620px 420px at 18% 12%,rgba(39,225,255,.07),transparent 62%),
+            radial-gradient(720px 520px at 86% 84%,rgba(255,62,200,.055),transparent 62%),
+            radial-gradient(520px 420px at 60% 50%,rgba(70,255,224,.04),transparent 60%);
+  animation:auroraDrift 30s ease-in-out infinite alternate;}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.22;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:36px 36px;
+  -webkit-mask:radial-gradient(circle at 50% 38%,#000,transparent 78%);mask:radial-gradient(circle at 50% 38%,#000,transparent 78%);
+  animation:gridDrift 44s linear infinite;}
+@keyframes auroraDrift{0%{transform:translate(0,0)}50%{transform:translate(2.5%,-2%)}100%{transform:translate(-2%,2.5%)}}
+@keyframes gridDrift{from{background-position:0 0}to{background-position:36px 36px}}
+
+/* smoother board cards + hover lift */
+.card.unit{transition:transform .16s cubic-bezier(.2,.8,.3,1.2),box-shadow .16s ease,filter .16s ease}
+.card.unit:hover{transform:translateY(-4px) scale(1.035);box-shadow:0 8px 22px rgba(0,0,0,.55);z-index:6}
+.board{transition:box-shadow .35s ease}
+.card.hand-card{transition:transform .16s cubic-bezier(.2,.8,.3,1.2),box-shadow .16s ease}
+
+/* ready units breathe to draw the eye */
+@keyframes readyBreath{0%,100%{box-shadow:0 0 0 2px var(--gold),0 0 10px rgba(255,210,74,.25)}50%{box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,210,74,.55)}}
+.card.unit.ready{animation:readyBreath 2.2s ease-in-out infinite}
+
+/* core nodes pulse gently */
+@keyframes coreBreath{0%,100%{box-shadow:0 0 14px rgba(39,225,255,.18)}50%{box-shadow:0 0 24px rgba(39,225,255,.34)}}
+#playerCore,#enemyCore{transition:box-shadow .3s ease}
+
 </style>
 </head>
 <body>
@@ -1978,14 +2007,14 @@ function sfCore(seat,color){var el=$(seat===MY?"playerCore":"enemyCore");if(!el)
 function sfCards(boardId,fn){var els=document.querySelectorAll("#"+boardId+" .card.unit");var i=0;els.forEach(function(el){fn(el,i++);});}
 function sfCardEl(uid){return document.querySelector('#playerBoard [data-uid="'+uid+'"], #enemyBoard [data-uid="'+uid+'"], #playerPerms [data-uid="'+uid+'"], #enemyPerms [data-uid="'+uid+'"]');}
 function spellCat(fx){
-  if(["empEnemy","burnAll1","ult_meltdown"].indexOf(fx)>=0)return "aoeEnemy";
-  if(["dmgAny","burnUnit","coreBurn","coreDmg","ult_breach","spark","knifeThrow"].indexOf(fx)>=0)return "dmg";
-  if(["gainCore","patch","archive","scavenge","gainCore2","gainCore3","coreEng2","ult_lockdown"].indexOf(fx)>=0)return "heal";
-  if(["buff","anthem","swarmBuff","ult_swarm","ult_ascend","grant","fortify","inject","championAscend","swarmLord","stealthBuff"].indexOf(fx)>=0)return "buff";
-  if(fx==="stun")return "stun";
-  if(["transform","transformAlly"].indexOf(fx)>=0)return "transform";
+  if(["empEnemy","burnAll1","ult_meltdown","sngPurge","sngInit","sngCompile","cursePlague","dmgPerUnit","targetedOffense","invokevoid"].indexOf(fx)>=0)return "aoeEnemy";
   if(fx==="ult_doomsday")return "doom";
-  if(["reanimate","ult_crypt","summonBody","spawn","replicate","replicate2"].indexOf(fx)>=0)return "summon";
+  if(fx==="stun")return "stun";
+  if(["transform","transformAlly","swap","swapUnit","swapAll","wobbly","flipAllies","magicktrick"].indexOf(fx)>=0)return "transform";
+  if(["reanimate","ult_crypt","summonBody","spawn","replicate","replicate2","curseGhouls","buildFrame","buildAssembly","buildLaser","buildGiga","assembleScrapling","conscript","tokens","sngSeed"].indexOf(fx)>=0)return "summon";
+  if(["gainCore","patch","archive","scavenge","gainCore2","gainCore3","coreEng2","ult_lockdown","heal","maintenance"].indexOf(fx)>=0)return "heal";
+  if(["buff","anthem","anthemAtk","anthemHp","swarmBuff","ult_swarm","ult_ascend","grant","fortify","inject","championAscend","swarmLord","stealthBuff","sacRitual"].indexOf(fx)>=0)return "buff";
+  if(["dmgAny","burnUnit","coreBurn","coreDmg","coreDmg2","coreDmg3","burnCore2","ult_breach","spark","knifeThrow","sngFirewall","shakedown","curseBloodmoon","execute","raiseDead","hex","brimstone","hellfire","weakenStrong","overcharge","strikeforce","cashburn","weaken","shrink"].indexOf(fx)>=0)return "dmg";
   return "cast";
 }
 function runSpellFx(sf){
@@ -1994,7 +2023,7 @@ function runSpellFx(sf){
   var col=(typeof S!=="undefined"&&S&&S[who])?facCol(S[who].fac):"var(--cyan)";
   var enemyBoardId=(enemySeat===MY?"playerBoard":"enemyBoard");
   var ownBoardId=(who===MY?"playerBoard":"enemyBoard");
-  if(cat==="aoeEnemy"){screenFlash("rgba(255,110,60,.16)");sfCards(enemyBoardId,function(el,k){setTimeout(function(){sfBolt(el,col);sfBoom(el,col);},k*55);});if(_sndReady)sfx("hit");}
+  if(cat==="aoeEnemy"){screenFlash("rgba(255,110,60,.16)");sfCore(enemySeat,"rgba(255,84,104,.6)");sfCards(enemyBoardId,function(el,k){setTimeout(function(){sfBolt(el,col);sfBoom(el,col);},k*55);});if(_sndReady)sfx("hit");}
   else if(cat==="dmg"){var el=sf.target&&sf.target.unit?sfCardEl(sf.target.unit.uid):null;if(el){sfBolt(el,col);sfBoom(el,col);}else sfCore(enemySeat,"rgba(255,84,104,.6)");}
   else if(cat==="heal"){sfCore(who,"rgba(57,230,160,.6)");}
   else if(cat==="buff"){sfCards(ownBoardId,function(el,k){setTimeout(function(){sfGlow(el,"#39e6a0");},k*40);});}
@@ -2002,6 +2031,7 @@ function runSpellFx(sf){
   else if(cat==="transform"){var et=sf.target&&sf.target.unit?sfCardEl(sf.target.unit.uid):null;if(et){sfBoom(et,col);sfGlow(et,col);}}
   else if(cat==="doom"){screenFlash("rgba(155,81,224,.28)");sfCards(enemyBoardId,function(el,k){setTimeout(function(){sfBoom(el,"#9b51e0");},k*40);});sfCards(ownBoardId,function(el,k){setTimeout(function(){sfBoom(el,"#9b51e0");},k*40);});}
   else if(cat==="summon"){sfCards(ownBoardId,function(el){if(el.classList.contains("aEnter"))sfRing(el,col);});}
+  else if(cat==="cast"){sfCore(who,col);}
 }
 function fxRunAttack(atk){
   if(!ANIM_ON||!atk)return;
