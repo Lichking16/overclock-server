@@ -1539,6 +1539,20 @@ function aiPickPlay(){
     const lance=aiIdx("melt_lance");if(lance>=0&&canPlay("ai","melt_lance")){const v=ai.board.some(u=>u.overheat)?3:2;if(t.hp+t.armor<=v)return{i:lance,target:{kind:"unit",unit:t}};}
     const fwl=aiIdx("sng_firewall");if(fwl>=0&&canPlay("ai","sng_firewall")){const v=ai.void?3:2;if(t.hp+t.armor<=v)return{i:fwl,target:{kind:"unit",unit:t}};}
   }
+  // MECHS: set up Frameworks early, then flood cheap Mechs that inherit the frame buffs
+  if(ai.fac==="mech"){
+    const nFrames=ai.board.filter(u=>u.frame&&u.hp>0).length;
+    const nMechUnits=ai.board.filter(u=>u.mech&&u.type!=="permanent").length;
+    if(nFrames<3){
+      const bp=aiIdx("mech_blueprint");if(bp>=0&&canPlay("ai","mech_blueprint")&&(ai.scrap||0)>=2)return{i:bp};
+      for(const bid of["mech_gunner","mech_bulwark","mech_assembler"]){const ix=aiIdx(bid);if(ix>=0&&canPlay("ai",bid)&&(ai.scrap||0)>=2&&nMechUnits<6)return{i:ix};}
+    }
+    if(nFrames>0&&nMechUnits<6){
+      // dump the cheapest Mech to ride the frame buffs
+      let cm=-1,cc=99;ai.hand.forEach((id,i)=>{const c=DB[id];if(c.type==="program"&&c.mech&&canPlay("ai",id)&&effCost("ai",id)<cc){cm=i;cc=effCost("ai",id);}});
+      if(cm>=0)return{i:cm};
+    }
+  }
   const shk=aiIdx("carn_shrink");if(shk>=0&&canPlay("ai","carn_shrink")){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>=4).sort((a,b)=>b.atk-a.atk)[0];if(t)return{i:shk,target:{kind:"unit",unit:t}};}
   const vir=aiIdx("zd_virus");if(vir>=0&&canPlay("ai","zd_virus")){const t=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>=3&&!u.stunned).sort((a,b)=>b.atk-a.atk)[0];if(t)return{i:vir,target:{kind:"unit",unit:t}};}
   const ex=aiIdx("zd_exploit");if(ex>=0&&canPlay("ai","zd_exploit")&&(S.me.core<=6||Math.random()<0.5))return{i:ex};
