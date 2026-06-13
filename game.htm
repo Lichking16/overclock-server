@@ -1649,16 +1649,26 @@ function aiAttacks(){
   if(S.over){busy=false;return;}
   const seq=()=>{
     if(S.over){busy=false;return;}
-    const att=S.ai.board.find(u=>u.ready&&u.atk>0);
-    if(!att){busy=false;clearSel();if(!S.over)startTurn("me");return;}
-    const guards=guardsOf("me");const bypass=att.stealth;
+    const ready=S.ai.board.filter(u=>u.ready&&u.atk>0).sort((a,b)=>a.atk-b.atk);
+    if(!ready.length){busy=false;clearSel();if(!S.over)startTurn("me");return;}
+    const guards=guardsOf("me");
+    // total damage that can reach the enemy Core this turn (stealth bypasses guards; otherwise only when no guards)
+    const faceDmg=ready.reduce((s,u)=>s+((u.stealth||guards.length===0)?u.atk:0),0);
+    const att=ready[0];const bypass=att.stealth;const canFace=(guards.length===0||bypass);
     let target;
-    if(guards.length&&!bypass)target={kind:"unit",unit:guards.slice().sort((a,b)=>(a.hp+a.armor)-(b.hp+b.armor))[0]};
-    else{
-      const targets=S.me.board.filter(u=>!u.stealth);
-      const th=targets.filter(u=>u.atk>=3).sort((a,b)=>b.atk-a.atk);
-      const kill=th.find(t=>att.atk>=t.hp+t.armor);
-      target=kill?{kind:"unit",unit:kill}:{kind:"core"};
+    if(canFace&&faceDmg>=S.me.core){target={kind:"core"};}           // LETHAL — send it at the face
+    else if(guards.length&&!bypass){                                  // must clear a Guard first
+      const killG=guards.filter(g=>att.atk>=g.hp+g.armor).sort((a,b)=>(b.atk+b.hp)-(a.atk+a.hp))[0];
+      target={kind:"unit",unit:killG||guards.slice().sort((a,b)=>(a.hp+a.armor)-(b.hp+b.armor))[0]};
+    } else {                                                          // open board: favourable trade, else pressure the face
+      const en=S.me.board.filter(u=>!u.stealth&&u.type!=="permanent"&&u.atk>0);
+      const cand=en.filter(e=>att.atk>=e.hp+e.armor).map(e=>{
+        const survives=e.atk<att.hp;                                  // we live through it
+        const valueWin=(e.atk+e.hp)>=(att.atk+att.hp);                // their body is worth >= ours
+        const pressured=S.ai.core<=12;                                // we need to slow their clock
+        return {e,ok:(survives||valueWin||pressured),score:(survives?100:0)+e.atk*3+e.hp};
+      }).filter(c=>c.ok).sort((a,b)=>b.score-a.score);
+      target=cand.length?{kind:"unit",unit:cand[0].e}:{kind:"core"};
     }
     if(typeof markAttack==="function")markAttack(att.uid,(DB[att.id]?DB[att.id].f:"n"),(target.kind==="unit"&&target.unit)?{kind:"unit",uid:target.unit.uid}:{kind:"core"});
     att.ready=false;if(att.coreOnAttack)addCore("ai",1);recentAct={t:"act",who:"ai",text:att.name+(target.kind==="core"?" strikes the Core":" attacks")};if(att.stealth)att.stealth=false;
