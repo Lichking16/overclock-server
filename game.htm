@@ -505,7 +505,8 @@ const DB={
   ren_sacrifice:{f:"ren",type:"script",cost:1,fx:"sacrifice",target:"friendly",txt:"Ritual Sacrifice: destroy a friendly unit, draw 2."},
   ren_reanimate:{f:"ren",type:"script",cost:3,fx:"reanimate",target:"none",txt:"Reanimate: summon the last creature that died for you."},
   ren_plague:{f:"ren",type:"script",cost:4,fx:"empEnemy",val:2,target:"none",txt:"Plague: deal 2 to all enemy units."},
-  ren_execute:{f:"ren",type:"script",cost:3,fx:"execute",target:"friendly",txt:"Execute: sacrifice a friendly unit to destroy 2 random enemy units."},
+  ren_execute:{f:"ren",type:"script",cost:3,fx:"execute",target:"friendly",txt:"Execute: sacrifice a friendly unit to destroy a random enemy unit."},
+  ren_raise:{f:"ren",type:"script",cost:4,fx:"raiseDead",target:"enemyUnit",txt:"Raise Dead: destroy an enemy unit and raise a 2/2 Ghoul."},
   ren_curse_ghouls:{f:"ren",type:"script",cost:3,fx:"curseGhouls",target:"none",curse:true,name:"Curse: Ghouls",txt:"Summon three Ghouls; all your Ghouls — now and later — get +1/+1."},
   ren_curse_plague:{f:"ren",type:"script",cost:3,fx:"cursePlague",target:"none",curse:true,name:"Curse: Plagues",txt:"Deal 2 to all enemy units and the enemy Core; each surviving enemy unit becomes a 2/2 Ghoul. Your Ghouls get +1/+1."},
   ren_curse_bloodmoon:{f:"ren",type:"script",cost:3,fx:"curseBloodmoon",target:"none",curse:true,name:"Curse: Bloodmoon",txt:"Deal 1 to the enemy Core for each unit that has died this game. Your Ghouls get +1/+1."},
@@ -618,7 +619,7 @@ const DECKS={
   bas:[["bas_wall",3],["bas_sentinel",4],["bas_turret",3],["bas_warden",2],["bas_main",1],["bas_rally",3],["bas_tariff",2],["bas_reinforce",3],["bas_patch",3],["bas_shield",1],["bas_strike",3],["bas_retaliate",1],["bas_maint",1]],
   zd:[["zd_root",4],["zd_spy",4],["zd_phantom",4],["zd_back",2],["zd_assassin",2],["zd_op",2],["zd_exploit",4],["zd_virus",2],["zd_blades",3],["zd_relay",1],["zd_backstab",1],["zd_backdoor",1]],
   sng:[["sng_seed",5],["sng_sprite",4],["sng_sentinel",3],["sng_monolith",2],["sng_overmind",2],["sng_honeypot",2],["sng_quarantine",2],["sng_recompile",5],["sng_firewall",3],["sng_purge",2]],
-  ren:[["ren_thrall",5],["ren_zealot",5],["ren_butcher",4],["ren_revenant",2],["ren_warlord",2],["ren_grave",1],["ren_sacrifice",3],["ren_reanimate",3],["ren_plague",3],["ren_execute",2]],
+  ren:[["ren_thrall",5],["ren_zealot",5],["ren_butcher",4],["ren_revenant",2],["ren_warlord",2],["ren_grave",1],["ren_sacrifice",3],["ren_reanimate",3],["ren_plague",2],["ren_execute",1],["ren_raise",2]],
   mech:[["mech_assembler",3],["mech_gunner",3],["mech_bulwark",3],["mech_techie",3],["mech_frame",4],["mech_walker",4],["mech_tank",2],["mech_titan",1],["mech_reactor",2],["mech_forge",2],["mech_blueprint",3]],
   carn:[["carn_acrobat",5],["carn_knife",5],["carn_mirror",2],["carn_strongman",2],["carn_clown",4],["carn_ringmaster",1],["carn_funhouse",1],["carn_show",3],["carn_shrink",2],["carn_bigtop",1],["carn_stage",2],["carn_magick",1],["carn_wobbly",1]],
   dem:[["dem_imp",5],["dem_whelp",4],["dem_cultling",3],["dem_acolyte",3],["dem_fiend",2],["dem_brander",2],["dem_overlord",1],["dem_champion",1],["dem_possess",2],["dem_brand",2],["dem_plate",1],["dem_fury",2],["dem_hellfire",1],["dem_brimstone",1]],
@@ -851,6 +852,7 @@ const ART={
   zd_backstab:'<path d="M28 9L16 26 M14 28l3-1 1 3-3 1z M26 7l5-1-1 5"/><path d="M20 18l-6 2"/>',
   zd_backdoor:'<rect x="15" y="11" width="18" height="18" rx="2"/><path d="M15 11l-4 4v14h4 M28 19h.01"/>',
   ren_execute:'<path d="M30 8l4 4-10 10 M24 22l-10 10 M14 30l-2 4 4-2 M30 8l-6 6"/><path d="M30 8a4 4 0 014 4"/>',
+  ren_raise:'<path d="M16 30v-8a8 8 0 0116 0v8"/><path d="M20 30v-6 M28 30v-6 M24 30v-7"/><path d="M24 6v6 M21 9h6"/>',
   ren_curse_ghouls:'<path d="M14 18a5 5 0 0110 0v6l-2-1-2 1-1-1-2 1-1-1-2 1z"/><path d="M30 20a4 4 0 018 0v5l-2-1-2 1-2-1-2 1z"/>',
   ren_curse_plague:'<circle cx="24" cy="18" r="8"/><circle cx="21" cy="16" r="1.4" fill="currentColor"/><circle cx="27" cy="16" r="1.4" fill="currentColor"/><path d="M20 24h8 M22 28v3 M26 28v3 M24 28v4"/>',
   ren_curse_bloodmoon:'<path d="M24 8a12 12 0 100 24 9 9 0 010-24z"/><path d="M30 14l1 2 2 .3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2L27 16.3l2-.3z" stroke-width="1"/>',
@@ -934,10 +936,7 @@ const ART={
   carn_stage:'<path d="M14 10h20v8c0 6-5 10-10 10s-10-4-10-10z"/><path d="M19 15l3 2 M29 15l-3 2"/><path d="M21 24a4 3 0 016 0"/>',
 };
 function iconFor(id){const col=facCol(DB[id].f);
-  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ART[id]||ART.n_grunt}</svg>`;}
-
-/* ---------- menus / lobby ---------- */
-
+  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" str
 </script>
 <script>
 /* OVERCLOCK — menus.js  (menus + server-relay online lobby) */
@@ -1426,7 +1425,8 @@ function playScript(p,handIdx,target){
     case "strikeforce":{if(target&&target.unit)hurt(target.unit,def.val);else if(target&&target.side)S[target.side].core-=def.val;var ft=S[p].board.filter(function(x){return x.type!=="permanent"&&x.hp>0;}).sort(function(a,b){return (b.armor||0)-(a.armor||0);})[0];if(ft)hurt(ft,def.self||2);log("sys","Strike Force: "+def.val+" damage, "+(def.self||2)+" to "+(ft?ft.name:"-"));break;}
     case "maintenance":draw(p);addCore(p,2);break;
     case "backstab":{var _a=S[p].board.filter(function(x){return x.stealth&&x.type!=="permanent";}).sort(function(a,b){return b.atk-a.atk;})[0];var _d=_a?_a.atk:0;if(target&&target.unit&&_d>0){hurt(target.unit,_d);_a.stealth=false;log("sys","Backstab: "+_d+" damage; "+_a.name+" revealed");}else log("sys","Backstab: no Stealth unit");break;}
-    case "execute":{if(target&&target.unit)target.unit.hp=0;var en=S[opp].board.filter(function(x){return x.type!=="permanent"&&x.hp>0;});for(var k=0;k<2&&en.length;k++){var ix=Math.random()*en.length|0;en[ix].hp=0;en.splice(ix,1);}log("sys","Execute: 1 sacrificed, 2 enemies destroyed");break;}
+    case "execute":{if(target&&target.unit)target.unit.hp=0;var en=S[opp].board.filter(function(x){return x.type!=="permanent"&&x.hp>0;});if(en.length){var ix=Math.random()*en.length|0;en[ix].hp=0;}log("sys","Execute: 1 sacrificed, 1 enemy destroyed");break;}
+    case "raiseDead":{if(target&&target.unit)target.unit.hp=0;cleanup();makeToken(p,"ren_ghoul");log("sys","Raise Dead: an enemy falls, a Ghoul rises");break;}
     case "curseGhouls":{buffGhouls(p,1);for(var g=0;g<3;g++)makeToken(p,"ren_ghoul");log("sys","Curse of Ghouls: 3 Ghouls, all Ghouls +1/+1");break;}
     case "cursePlague":{S[opp].board.forEach(function(x){if(x.type!=="permanent")hurt(x,2);});S[opp].core-=2;S[opp].board.forEach(function(x){if(x.type!=="permanent"&&x.hp>0){x.atk=2;x.hp=2;x.maxHp=2;x.armor=0;x.id="ren_ghoul";x.name="Ghoul";x.ghoul=true;}});buffGhouls(p,1);log("sys","Curse of Plagues — the enemy is plagued into Ghouls; your Ghouls +1/+1");break;}
     case "curseBloodmoon":{var _bm=S.deaths||0;S[opp].core-=_bm;buffGhouls(p,1);log("sys","Bloodmoon: "+_bm+" to enemy Core ("+_bm+" deaths); your Ghouls +1/+1");break;}
@@ -1539,6 +1539,7 @@ function aiPickPlay(){
     const hx=aiIdx("cult_hex");if(hx>=0&&canPlay("ai","cult_hex")&&t.hp+t.armor<=3)return{i:hx,target:{kind:"unit",unit:t}};
     const lance=aiIdx("melt_lance");if(lance>=0&&canPlay("ai","melt_lance")){const v=ai.board.some(u=>u.overheat)?3:2;if(t.hp+t.armor<=v)return{i:lance,target:{kind:"unit",unit:t}};}
     const fwl=aiIdx("sng_firewall");if(fwl>=0&&canPlay("ai","sng_firewall")){const v=ai.void?3:2;if(t.hp+t.armor<=v)return{i:fwl,target:{kind:"unit",unit:t}};}
+    const rd=aiIdx("ren_raise");if(rd>=0&&canPlay("ai","ren_raise")&&ai.board.filter(u=>u.type!=="permanent").length<7)return{i:rd,target:{kind:"unit",unit:t}};
   }
   // MECHS: set up Frameworks early, then flood cheap Mechs that inherit the frame buffs
   if(ai.fac==="mech"){
