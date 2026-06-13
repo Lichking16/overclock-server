@@ -39,6 +39,10 @@
   #endBtn{background:linear-gradient(180deg,#13243d,#0c1626);color:var(--cyan);border:1px solid var(--cyan);
     border-radius:9px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-size:11px}
   #endBtn:hover{box-shadow:0 0 16px rgba(39,225,255,.4)} #endBtn:disabled{opacity:.4;cursor:default;box-shadow:none}
+  .sidebtn{background:linear-gradient(180deg,#131c2e,#0b1220);color:var(--muted);border:1px solid var(--line);border-radius:9px;padding:7px 13px;font:inherit;font-weight:700;font-size:11px;letter-spacing:.8px;cursor:pointer;text-transform:uppercase;transition:box-shadow .16s ease,color .16s ease,border-color .16s ease}
+  .sidebtn:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 12px rgba(39,225,255,.3)}
+  .sidebtn.cc{color:var(--red);border-color:rgba(255,84,104,.45);background:linear-gradient(180deg,#241019,#15090e)}
+  .sidebtn.cc:hover{color:var(--red);border-color:var(--red);box-shadow:0 0 12px rgba(255,84,104,.35)}
   #turnTag{font-size:10px;color:var(--muted);letter-spacing:1px}
   .card{width:92px;height:124px;border-radius:10px;position:relative;cursor:pointer;
     background:linear-gradient(180deg,#101a2e,#0a1120);border:1px solid var(--line);
@@ -343,18 +347,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 
 /* smoother board cards + hover lift */
 .card.unit{transition:transform .16s cubic-bezier(.2,.8,.3,1.2),box-shadow .16s ease,filter .16s ease}
-.card.unit:hover{transform:translateY(-4px) scale(1.035);box-shadow:0 8px 22px rgba(0,0,0,.55);z-index:6}
-.board{transition:box-shadow .35s ease}
-.card.hand-card{transition:transform .16s cubic-bezier(.2,.8,.3,1.2),box-shadow .16s ease}
-
-/* ready units breathe to draw the eye */
-@keyframes readyBreath{0%,100%{box-shadow:0 0 0 2px var(--gold),0 0 10px rgba(255,210,74,.25)}50%{box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,210,74,.55)}}
-.card.unit.ready{animation:readyBreath 2.2s ease-in-out infinite}
-
-/* core nodes pulse gently */
-@keyframes coreBreath{0%,100%{box-shadow:0 0 14px rgba(39,225,255,.18)}50%{box-shadow:0 0 24px rgba(39,225,255,.34)}}
-#playerCore,#enemyCore{transition:box-shadow .3s ease}
-
+.card.unit:hover{transform:translateY(-4px) scale(1.035);box-shadow:0 8
 </style>
 </head>
 <body>
