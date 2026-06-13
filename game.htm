@@ -936,7 +936,8 @@ const ART={
   carn_stage:'<path d="M14 10h20v8c0 6-5 10-10 10s-10-4-10-10z"/><path d="M19 15l3 2 M29 15l-3 2"/><path d="M21 24a4 3 0 016 0"/>',
 };
 function iconFor(id){const col=facCol(DB[id].f);
-  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" str
+  return `<svg class="cardart" viewBox="0 0 48 32" style="color:${col}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ART[id]||ART.n_grunt}</svg>`;}
+
 </script>
 <script>
 /* OVERCLOCK — menus.js  (menus + server-relay online lobby) */
