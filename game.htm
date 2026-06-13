@@ -1627,7 +1627,30 @@ function aiPickPlay(){
   {const pg=aiIdx("sng_purge");if(pg>=0&&canPlay("ai","sng_purge")){const v=ai.void?5:3;const kills=S.me.board.filter(u=>u.type!=="permanent"&&u.hp>0&&u.hp+(u.armor||0)<=v).length;if(kills>=2)return{i:pg};}}
   {const rc=aiIdx("sng_recompile");if(rc>=0&&canPlay("ai","sng_recompile")&&(!ai.void||ai.hand.length<=4))return{i:rc};}
   {const _gn=ai.board.filter(u=>u.type!=="permanent").length;const incoming=S.me.board.filter(u=>u.type!=="permanent"&&u.atk>0&&!u.stealth).reduce((s,u)=>s+u.atk,0);if((incoming>=8||ai.core<=12)&&_gn<6){let gi=-1,gh=-1;ai.hand.forEach((id,i)=>{const c=DB[id];if(c.type==="program"&&c.guard&&canPlay("ai",id)&&c.hp>gh){gi=i;gh=c.hp;}});if(gi>=0)return{i:gi};}}
-  const _bN=ai.board.filter(u=>u.type!=="permanent").length;let best=-1,bc=-1;ai.hand.forEach((id,i)=>{const c=DB[id];if(((c.type==="permanent")||(c.type==="program"&&_bN<6))&&canPlay("ai",id)&&effCost("ai",id)>bc){best=i;bc=effCost("ai",id);}});
+  // generic development: play the highest-VALUE body we can afford (stats + keywords + board state)
+  const _inc=S.me.board.filter(u=>u.type!=="permanent"&&u.atk>0&&!u.stealth).reduce((s,u)=>s+u.atk,0);
+  const _behind=(ai.core<S.me.core)||_inc>=8;
+  const _ahead=(ai.core>S.me.core+6);
+  let best=-1,bv=-1e9;
+  ai.hand.forEach((id,i)=>{
+    const c=DB[id];if(!canPlay("ai",id))return;
+    if(c.type!=="program"&&c.type!=="permanent")return;           // scripts handled by hooks above
+    let v=0;
+    if(c.type==="program"){
+      const a=(ai.void&&c.vatk!=null)?c.vatk:c.atk,hp=(ai.void&&c.vhp!=null)?c.vhp:c.hp;
+      v=a+hp;
+      if(c.guard)v+=_behind?5:1;
+      if(c.overheat)v+=2;
+      if(c.leech)v+=1;
+      if(c.deploy)v+=2;
+      if(c.death)v+=1;
+      if(_ahead)v+=a*0.4;                                          // press the advantage
+    }else{                                                         // permanent / engine
+      v=3+(c.loc?2:0)+(c.start?2:0)+(c.honeypot?2:0)+(c.frame?3:0)+(c.harvest?1:0);
+    }
+    v+=effCost("ai",id)*0.4;                                       // tie-break toward spending mana
+    if(v>bv){bv=v;best=i;}
+  });
   if(best>=0)return{i:best};
   return null;
 }
